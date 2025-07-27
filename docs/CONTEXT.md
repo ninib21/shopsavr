@@ -1,0 +1,1 @@
+AI IDE Context for ShopSavr App

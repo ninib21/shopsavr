@@ -1,0 +1,119 @@
+{
+  "name": "shopsavr",
+  "version": "1.0.0",
+  "description": "Automatically find and apply the best coupon codes while shopping online",
+  "main": "index.js",
+  "scripts": {
+    "install:all": "npm run install:backend && npm run install:frontend && npm run install:extension",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend/web && npm install",
+    "install:extension": "cd frontend/extension && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:all": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:extension\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend/web && npm start",
+    "dev:extension": "cd frontend/extension && npm run build:dev -- --watch",
+    "build": "npm run build:backend && npm run build:frontend && npm run build:extension",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend/web && npm run build",
+    "build:extension": "cd frontend/extension && npm run build:prod",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:extension",
+    "test:all": "npm run test",
+    "test:backend": "cd backend && npm test",
+    "test:frontend": "cd frontend/web && npm test -- --watchAll=false",
+    "test:extension": "cd frontend/extension && npm test",
+    "test:e2e": "cd tests && npm run test:e2e",
+    "test:coverage": "npm run test:backend -- --coverage && npm run test:frontend -- --coverage",
+    "lint": "npm run lint:backend && npm run lint:frontend && npm run lint:extension",
+    "lint:all": "npm run lint",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend/web && npm run lint",
+    "lint:extension": "cd frontend/extension && npm run lint",
+    "lint:fix": "npm run lint:backend -- --fix && npm run lint:frontend -- --fix && npm run lint:extension -- --fix",
+    "format": "npm run format:backend && npm run format:frontend && npm run format:extension",
+    "format:all": "npm run format",
+    "format:backend": "cd backend && npm run format",
+    "format:frontend": "cd frontend/web && npm run format",
+    "format:extension": "cd frontend/extension && npm run format",
+    "format:check": "npm run format:backend -- --check && npm run format:frontend -- --check && npm run format:extension -- --check",
+    "clean": "npm run clean:backend && npm run clean:frontend && npm run clean:extension",
+    "clean:backend": "cd backend && npm run clean",
+    "clean:frontend": "cd frontend/web && npm run clean",
+    "clean:extension": "cd frontend/extension && npm run clean",
+    "start": "npm run start:backend",
+    "start:backend": "cd backend && npm start",
+    "start:frontend": "cd frontend/web && npm run serve",
+    "deploy:staging": "npm run build && npm run deploy:staging:backend && npm run deploy:staging:frontend",
+    "deploy:production": "npm run build && npm run deploy:production:backend && npm run deploy:production:frontend",
+    "deploy:staging:backend": "cd backend && npm run deploy:staging",
+    "deploy:staging:frontend": "cd frontend/web && npm run deploy:staging",
+    "deploy:production:backend": "cd backend && npm run deploy:production",
+    "deploy:production:frontend": "cd frontend/web && npm run deploy:production",
+    "deploy:chrome": "cd frontend/extension && npm run deploy:chrome",
+    "deploy:firefox": "cd frontend/extension && npm run deploy:firefox",
+    "deploy:edge": "cd frontend/extension && npm run deploy:edge",
+    "docker:build": "docker-compose build",
+    "docker:up": "docker-compose up -d",
+    "docker:down": "docker-compose down",
+    "docker:logs": "docker-compose logs -f",
+    "db:seed": "cd backend && npm run db:seed",
+    "db:migrate": "cd backend && npm run db:migrate",
+    "db:reset": "cd backend && npm run db:reset",
+    "security:audit": "npm audit --audit-level=high && cd backend && npm audit --audit-level=high && cd ../frontend/web && npm audit --audit-level=high && cd ../extension && npm audit --audit-level=high",
+    "security:fix": "npm audit fix && cd backend && npm audit fix && cd ../frontend/web && npm audit fix && cd ../extension && npm audit fix",
+    "docs:build": "cd docs && npm run build",
+    "docs:serve": "cd docs && npm run serve",
+    "release": "standard-version",
+    "release:major": "standard-version --release-as major",
+    "release:minor": "standard-version --release-as minor",
+    "release:patch": "standard-version --release-as patch",
+    "precommit": "lint-staged",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/shopsavr.git"
+  },
+  "keywords": [
+    "coupons",
+    "shopping",
+    "savings",
+    "browser-extension",
+    "e-commerce",
+    "deals",
+    "discounts",
+    "price-tracking",
+    "cashback"
+  ],
+  "author": "ShopSavr Team <team@shopsavr.xyz>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/your-username/shopsavr/issues"
+  },
+  "homepage": "https://github.com/your-username/shopsavr#readme",
+  "devDependencies": {
+    "concurrently": "^8.2.2",
+    "husky": "^8.0.3",
+    "lint-staged": "^15.2.0",
+    "standard-version": "^9.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  }
+}
