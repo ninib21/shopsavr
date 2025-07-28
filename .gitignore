@@ -301,3 +301,36 @@ bundle-analyzer-report.html
 
 # Webpack bundle analyzer
 webpack-bundle-analyzer-report.html
+
+# IDE and editor specific files
+.cursor/
+.superdesign/
+.windsurfrules
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+
+# Temporary files and images
+*.png
+*.jpg
+*.jpeg
+*.gif
+ChatGPT*
+CLAUDE.md
+
+# Development specific
+.kiro/
+admin/
+web/upgrade/
+backend/api/
+backend/logs/
+
+# Duplicate files
+.env.example
+*-enhanced.js
+*-automation.js
+*-sync.js
+*-reporting.js
+*-manager.js
+*-detectors.js
