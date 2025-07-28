@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import './DashboardPage.css';
 
@@ -65,23 +66,23 @@ const DashboardPage = () => {
         <div className="dashboard-section">
           <h2>Quick Actions</h2>
           <div className="quick-actions">
-            <a href="/coupons" className="action-card">
+            <Link to="/coupons" className="action-card">
               <div className="action-icon">🔍</div>
               <h3>Find Coupons</h3>
               <p>Search for coupon codes</p>
-            </a>
+            </Link>
             
-            <a href="/wishlist" className="action-card">
+            <Link to="/wishlist" className="action-card">
               <div className="action-icon">💝</div>
               <h3>Manage Wishlist</h3>
               <p>Track your favorite items</p>
-            </a>
+            </Link>
             
-            <a href="/settings" className="action-card">
+            <Link to="/settings" className="action-card">
               <div className="action-icon">⚙️</div>
               <h3>Settings</h3>
               <p>Customize your experience</p>
-            </a>
+            </Link>
           </div>
         </div>
       </div>

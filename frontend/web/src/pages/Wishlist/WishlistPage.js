@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchWishlist, removeFromWishlist } from '../../store/slices/wishlistSlice';
 import LoadingSpinner from '../../components/UI/LoadingSpinner';
@@ -138,9 +139,9 @@ const WishlistPage = () => {
             <div className="empty-icon">❤️</div>
             <h3>Your wishlist is empty</h3>
             <p>Start adding items to your wishlist to track price drops and never miss a deal!</p>
-            <a href="/coupons" className="btn btn-primary">
+            <Link to="/coupons" className="btn btn-primary">
               Browse Deals
-            </a>
+            </Link>
           </div>
         ) : (
           <div className="wishlist-grid">

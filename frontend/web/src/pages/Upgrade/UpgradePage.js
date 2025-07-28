@@ -55,8 +55,10 @@ const UpgradePage = () => {
   };
 
   const handleUpgrade = (planName) => {
-    // TODO: Implement payment processing
-    console.log(`Upgrading to ${planName} plan (${billingCycle})`);
+    // For now, show an alert. In production, this would redirect to payment processor
+    alert(`Redirecting to payment for ${planName} plan (${billingCycle}). Payment integration coming soon!`);
+    // TODO: Implement Stripe/PayPal integration
+    // window.location.href = `/checkout?plan=${planName}&billing=${billingCycle}`;
   };
 
   const currentPlan = user?.subscription?.plan || 'free';

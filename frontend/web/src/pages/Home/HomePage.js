@@ -1,123 +1,287 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { Helmet } from 'react-helmet-async';
+import { motion } from 'framer-motion';
+import './HomePage.css';
 
 const HomePage = () => {
-  const { isAuthenticated } = useAuth();
+  const [particles, setParticles] = useState([]);
+
+  useEffect(() => {
+    // Generate particles for background animation
+    const particleArray = [];
+    for (let i = 0; i < 30; i++) {
+      particleArray.push({
+        id: i,
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        delay: Math.random() * 6,
+        size: Math.random() * 3 + 1
+      });
+    }
+    setParticles(particleArray);
+  }, []);
 
   return (
-    <div className="home-page">
-      {/* Hero Section */}
-      <section className="hero">
-        <div className="hero-content">
-          <h1 className="hero-title">
-            Save Money While Shopping Online
-            <span className="hero-emoji">💰</span>
-          </h1>
-          <p className="hero-subtitle">
-            Automatically find and apply the best coupon codes. 
-            Track prices, manage wishlists, and maximize your savings effortlessly.
-          </p>
-          
-          <div className="hero-actions">
-            {isAuthenticated ? (
-              <Link to="/dashboard" className="btn btn-primary btn-large">
-                Go to Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/register" className="btn btn-primary btn-large">
-                  Get Started Free
-                </Link>
-                <Link to="/login" className="btn btn-secondary btn-large">
-                  Sign In
-                </Link>
-              </>
-            )}
-          </div>
-          
-          <div className="hero-stats">
-            <div className="stat">
-              <span className="stat-number">$2.5M+</span>
-              <span className="stat-label">Total Saved</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">50K+</span>
-              <span className="stat-label">Happy Users</span>
-            </div>
-            <div className="stat">
-              <span className="stat-number">1M+</span>
-              <span className="stat-label">Coupons Found</span>
-            </div>
-          </div>
-        </div>
-      </section>
+    <>
+      <Helmet>
+        <title>ShopSavr - Your Ultimate Coupon & Shopping Deal Finder</title>
+        <meta
+          name="description"
+          content="Automatically find the best prices and apply active promo codes at checkout."
+        />
+        <meta name="keywords" content="coupons, shopping, savings, deals, discounts, browser extension" />
+      </Helmet>
 
-      {/* Features Section */}
-      <section className="features">
-        <div className="container">
-          <h2 className="section-title">Why Choose ShopSavr?</h2>
-          
-          <div className="features-grid">
-            <div className="feature-card">
-              <div className="feature-icon">🎫</div>
-              <h3>Automatic Coupon Detection</h3>
-              <p>Our browser extension automatically finds and applies the best coupon codes at checkout.</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">📊</div>
-              <h3>Price Tracking</h3>
-              <p>Track product prices across multiple stores and get alerts when prices drop.</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">💝</div>
-              <h3>Smart Wishlist</h3>
-              <p>Save products you love and get notified when they go on sale or when coupons are available.</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">📱</div>
-              <h3>Multi-Platform</h3>
-              <p>Access your savings dashboard on web, mobile, and through our browser extension.</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">🔒</div>
-              <h3>Secure & Private</h3>
-              <p>Your data is encrypted and secure. We never store your payment information.</p>
-            </div>
-            
-            <div className="feature-card">
-              <div className="feature-icon">⚡</div>
-              <h3>Lightning Fast</h3>
-              <p>Find and apply coupons in seconds without slowing down your shopping experience.</p>
-            </div>
+      <div className="cyber-homepage">
+        {/* Animated Background */}
+        <div className="cyber-background">
+          <div className="cyber-grid"></div>
+          <div className="floating-particles">
+            {particles.map(particle => (
+              <div
+                key={particle.id}
+                className="cyber-particle"
+                style={{
+                  left: `${particle.x}px`,
+                  top: `${particle.y}px`,
+                  animationDelay: `${particle.delay}s`,
+                  width: `${particle.size}px`,
+                  height: `${particle.size}px`
+                }}
+              />
+            ))}
           </div>
+          <div className="cyber-border-frame"></div>
         </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="cta">
-        <div className="container">
-          <div className="cta-content">
-            <h2>Ready to Start Saving?</h2>
-            <p>Join thousands of smart shoppers who save money with ShopSavr</p>
-            
-            {!isAuthenticated && (
-              <div className="cta-actions">
-                <Link to="/register" className="btn btn-primary btn-large">
-                  Create Free Account
-                </Link>
-                <p className="cta-note">No credit card required • Free forever</p>
+        {/* Main Content Container */}
+        <div className="cyber-container">
+          {/* Logo Section */}
+          <motion.div
+            className="cyber-logo-section"
+            initial={{ opacity: 0, y: -30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.2 }}
+          >
+            <div className="cyber-logo">
+              <div className="logo-icon-wrapper">
+                <div className="discount-icon">
+                  <span className="percent-symbol">%</span>
+                </div>
               </div>
-            )}
-          </div>
+              <h1 className="logo-text">ShopSavr</h1>
+            </div>
+          </motion.div>
+
+          {/* Main Heading */}
+          <motion.div
+            className="cyber-hero-text"
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.5 }}
+          >
+            <h2 className="cyber-main-title">
+              <span className="title-line-1">Your Ultimate</span>
+              <span className="title-line-2">Coupon & Shopping</span>
+              <span className="title-line-3">Deal Finder</span>
+            </h2>
+          </motion.div>
+
+          {/* Subtitle */}
+          <motion.p
+            className="cyber-subtitle"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.8 }}
+          >
+            Automatically find the best prices and apply<br />
+            active promo codes at checkout.
+          </motion.p>
+
+          {/* CTA Button */}
+          <motion.div
+            className="cyber-cta-section"
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.1 }}
+          >
+            <Link to="/register" className="cyber-cta-button">
+              <span className="button-text">Get Started</span>
+              <div className="button-glow"></div>
+            </Link>
+          </motion.div>
+
+          {/* Navigation Links */}
+          <motion.div
+            className="cyber-nav-links"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 1.4 }}
+          >
+            <a href="#how-it-works" className="cyber-nav-link">How It Works</a>
+            <span className="nav-separator">•</span>
+            <a href="#pricing" className="cyber-nav-link">Pricing</a>
+          </motion.div>
         </div>
-      </section>
-    </div>
+
+        {/* Stats Section */}
+        <section className="cyber-stats-section">
+          <div className="cyber-container">
+            <div className="stats-grid">
+              {stats.map((stat, index) => (
+                <motion.div
+                  key={stat.id}
+                  className="stat-card"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  <div className="stat-icon">{stat.icon}</div>
+                  <div className="stat-number">{stat.number}</div>
+                  <div className="stat-label">{stat.label}</div>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Section */}
+        <section className="cyber-features-section">
+          <div className="cyber-container">
+            <motion.div
+              className="section-header"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="section-title">Powerful Features</h3>
+              <p className="section-subtitle">Everything you need to maximize 
+
+        {/* Pricing Section */}
+        <section id="pricing" className="cyber-section">
+          <div className="cyber-container">
+            <motion.div
+              className="section-header"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+              viewport={{ once: true }}
+            >
+              <h3 className="section-title">Choose Your Plan</h3>
+              <p className="section-subtitle">Start saving money today</p>
+            </motion.div>
+
+            <div className="pricing-grid">
+              {pricingPlans.map((plan, index) => (
+                <motion.div
+                  key={plan.id}
+                  className={`pricing-card ${plan.popular ? 'popular' : ''}`}
+                  initial={{ opacity: 0, y: 50 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  viewport={{ once: true }}
+                >
+                  {plan.popular && <div className="popular-badge">Most Popular</div>}
+                  <h4 className="plan-name">{plan.name}</h4>
+                  <div className="plan-price">
+                    <span className="price-symbol">$</span>
+                    <span className="price-amount">{plan.price}</span>
+                    <span className="price-period">{plan.period}</span>
+                  </div>
+                  <ul className="plan-features">
+                    {plan.features.map((feature, idx) => (
+                      <li key={idx} className="feature-item">
+                        <i className="fas fa-check feature-check"></i>
+                        {feature}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link to="/register" className={`plan-button ${plan.buttonClass}`}>
+                    {plan.buttonText}
+                  </Link>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        </section>
+      </div>
+    </>
   );
 };
+
+// Steps data
+const steps = [
+  {
+    id: 1,
+    number: '01',
+    title: 'Install Extension',
+    description: 'Add ShopSavr to your browser in seconds'
+  },
+  {
+    id: 2,
+    number: '02',
+    title: 'Shop Normally',
+    description: 'Continue shopping on your favorite sites'
+  },
+  {
+    id: 3,
+    number: '03',
+    title: 'Save Automatically',
+    description: 'We find and apply the best coupons for you'
+  }
+];
+
+// Pricing plans data
+const pricingPlans = [
+  {
+    id: 1,
+    name: 'Free',
+    price: '0',
+    period: '/forever',
+    popular: false,
+    buttonClass: 'outline',
+    buttonText: 'Get Started',
+    features: [
+      'Basic coupon finding',
+      'Chrome extension',
+      'Email support'
+    ]
+  },
+  {
+    id: 2,
+    name: 'Pro',
+    price: '9.99',
+    period: '/month',
+    popular: true,
+    buttonClass: 'primary',
+    buttonText: 'Start Free Trial',
+    features: [
+      'Advanced AI coupons',
+      'Price drop alerts',
+      'Mobile apps',
+      'Priority support',
+      'Cashback tracking'
+    ]
+  },
+  {
+    id: 3,
+    name: 'Enterprise',
+    price: '29.99',
+    period: '/month',
+    popular: false,
+    buttonClass: 'outline',
+    buttonText: 'Contact Sales',
+    features: [
+      'Everything in Pro',
+      'Team management',
+      'API access',
+      'Custom integrations',
+      'Dedicated support'
+    ]
+  }
+];
 
 export default HomePage;

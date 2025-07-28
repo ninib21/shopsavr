@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { useTheme } from '../../contexts/ThemeContext';
 import './SettingsPage.css';
@@ -96,12 +97,12 @@ const SettingsPage = () => {
                 <label>Subscription Plan</label>
                 <div className="subscription-info">
                   <span className="plan-badge free">Free Plan</span>
-                  <button className="btn btn-primary">Upgrade to Pro</button>
+                  <Link to="/upgrade" className="btn btn-primary">Upgrade to Pro</Link>
                 </div>
               </div>
 
               <div className="action-buttons">
-                <button className="btn btn-secondary">Change Password</button>
+                <Link to="/profile" className="btn btn-secondary">Change Password</Link>
                 <button className="btn btn-danger" onClick={handleLogout}>
                   Sign Out
                 </button>
@@ -191,22 +192,22 @@ const SettingsPage = () => {
                 <div className="privacy-item">
                   <h4>Data Collection</h4>
                   <p>We collect minimal data to provide our services</p>
-                  <button className="btn btn-secondary">View Privacy Policy</button>
+                  <a href="https://shopsavr.xyz/privacy" target="_blank" rel="noopener noreferrer" className="btn btn-secondary">View Privacy Policy</a>
                 </div>
                 
                 <div className="privacy-item">
                   <h4>Account Data</h4>
                   <p>Download or delete your account data</p>
                   <div className="privacy-actions">
-                    <button className="btn btn-secondary">Download Data</button>
-                    <button className="btn btn-danger">Delete Account</button>
+                    <Link to="/profile" className="btn btn-secondary">Download Data</Link>
+                    <Link to="/profile" className="btn btn-danger">Delete Account</Link>
                   </div>
                 </div>
                 
                 <div className="privacy-item">
                   <h4>Browser Extension</h4>
                   <p>Manage extension permissions and data access</p>
-                  <button className="btn btn-secondary">Extension Settings</button>
+                  <a href="chrome-extension://settings" className="btn btn-secondary">Extension Settings</a>
                 </div>
               </div>
             </div>

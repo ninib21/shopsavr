@@ -61,7 +61,12 @@ const ProfilePage = () => {
                 alt="Profile"
                 className="avatar-image"
               />
-              <button className="avatar-edit-btn">📷</button>
+              <button 
+                className="avatar-edit-btn"
+                onClick={() => alert('Avatar upload coming soon!')}
+              >
+                📷
+              </button>
             </div>
             
             <div className="profile-info">
@@ -226,7 +231,12 @@ const ProfilePage = () => {
                   <h4>Password</h4>
                   <p>Last changed 3 months ago</p>
                 </div>
-                <button className="btn btn-secondary">Change Password</button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => alert('Password change functionality coming soon!')}
+                >
+                  Change Password
+                </button>
               </div>
               
               <div className="security-item">
@@ -234,7 +244,12 @@ const ProfilePage = () => {
                   <h4>Two-Factor Authentication</h4>
                   <p>Add an extra layer of security to your account</p>
                 </div>
-                <button className="btn btn-primary">Enable 2FA</button>
+                <button 
+                  className="btn btn-primary"
+                  onClick={() => alert('2FA setup coming soon!')}
+                >
+                  Enable 2FA
+                </button>
               </div>
               
               <div className="security-item">
@@ -242,7 +257,12 @@ const ProfilePage = () => {
                   <h4>Login Sessions</h4>
                   <p>Manage your active login sessions</p>
                 </div>
-                <button className="btn btn-secondary">View Sessions</button>
+                <button 
+                  className="btn btn-secondary"
+                  onClick={() => alert('Session management coming soon!')}
+                >
+                  View Sessions
+                </button>
               </div>
             </div>
           </div>
