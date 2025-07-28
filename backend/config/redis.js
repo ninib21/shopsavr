@@ -1,24 +1,25 @@
 const redis = require('redis');
 
-let redisClient;
+let redisClient = null;
 
-const connectRedis = async () => {
-  try {
+const getRedisClient = () => {
+  if (!redisClient) {
     redisClient = redis.createClient({
       url: process.env.REDIS_URL || 'redis://localhost:6379',
       retry_strategy: (options) => {
         if (options.error && options.error.code === 'ECONNREFUSED') {
-          console.error('Redis server connection refused');
-          return new Error('Redis server connection refused');
+          // End reconnecting on a specific error and flush all commands with a individual error
+          return new Error('The server refused the connection');
         }
         if (options.total_retry_time > 1000 * 60 * 60) {
-          console.error('Redis retry time exhausted');
+          // End reconnecting after a specific timeout and flush all commands with a individual error
           return new Error('Retry time exhausted');
         }
         if (options.attempt > 10) {
-          console.error('Redis connection attempts exceeded');
+          // End reconnecting with built in error
           return undefined;
         }
+        // reconnect after
         return Math.min(options.attempt * 100, 3000);
       }
     });
@@ -28,7 +29,7 @@ const connectRedis = async () => {
     });
 
     redisClient.on('connect', () => {
-      console.log('Redis connected successfully');
+      console.log('Connected to Redis');
     });
 
     redisClient.on('ready', () => {
@@ -38,23 +39,37 @@ const connectRedis = async () => {
     redisClient.on('end', () => {
       console.log('Redis connection ended');
     });
+  }
 
-    await redisClient.connect();
-    return redisClient;
+  return redisClient;
+};
+
+const connectRedis = async () => {
+  try {
+    const client = getRedisClient();
+    if (!client.isOpen) {
+      await client.connect();
+    }
+    return client;
   } catch (error) {
-    console.error('Redis connection failed:', error);
+    console.error('Failed to connect to Redis:', error);
     throw error;
   }
 };
 
-const getRedisClient = () => {
-  if (!redisClient) {
-    throw new Error('Redis client not initialized');
+const disconnectRedis = async () => {
+  try {
+    if (redisClient && redisClient.isOpen) {
+      await redisClient.quit();
+      redisClient = null;
+    }
+  } catch (error) {
+    console.error('Error disconnecting from Redis:', error);
   }
-  return redisClient;
 };
 
 module.exports = {
+  getRedisClient,
   connectRedis,
-  getRedisClient
+  disconnectRedis
 };

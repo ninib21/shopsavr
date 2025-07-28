@@ -252,7 +252,7 @@ class CouponController {
   }
 
   // Get best coupon for an order
-  static async getBestCoupon(req, res) {
+  static async findBestCoupon(req, res) {
     try {
       const { domain } = req.params;
       const { amount, categories = [], isNewUser = false } = req.body;
@@ -501,6 +501,137 @@ class CouponController {
         error: {
           code: 'CACHE_CLEAR_FAILED',
           message: 'Failed to clear cache'
+        }
+      });
+    }
+  }
+
+  // Admin: Create new coupon
+  static async createCoupon(req, res) {
+    try {
+      // TODO: Add admin authorization check
+      const couponData = req.body;
+      const coupon = new Coupon(couponData);
+      await coupon.save();
+
+      Logger.info('Coupon created', { couponId: coupon._id, code: coupon.code });
+
+      res.status(201).json({
+        message: 'Coupon created successfully',
+        coupon: {
+          id: coupon._id,
+          code: coupon.code,
+          domain: coupon.domain,
+          title: coupon.title
+        }
+      });
+    } catch (error) {
+      Logger.error('Coupon creation failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'COUPON_CREATION_FAILED',
+          message: 'Failed to create coupon'
+        }
+      });
+    }
+  }
+
+  // Admin: Update coupon
+  static async updateCoupon(req, res) {
+    try {
+      // TODO: Add admin authorization check
+      const { couponId } = req.params;
+      const updateData = req.body;
+
+      const coupon = await Coupon.findByIdAndUpdate(couponId, updateData, { new: true });
+      if (!coupon) {
+        return res.status(404).json({
+          error: {
+            code: 'COUPON_NOT_FOUND',
+            message: 'Coupon not found'
+          }
+        });
+      }
+
+      Logger.info('Coupon updated', { couponId, code: coupon.code });
+
+      res.json({
+        message: 'Coupon updated successfully',
+        coupon
+      });
+    } catch (error) {
+      Logger.error('Coupon update failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'COUPON_UPDATE_FAILED',
+          message: 'Failed to update coupon'
+        }
+      });
+    }
+  }
+
+  // Admin: Delete coupon
+  static async deleteCoupon(req, res) {
+    try {
+      // TODO: Add admin authorization check
+      const { couponId } = req.params;
+
+      const coupon = await Coupon.findByIdAndDelete(couponId);
+      if (!coupon) {
+        return res.status(404).json({
+          error: {
+            code: 'COUPON_NOT_FOUND',
+            message: 'Coupon not found'
+          }
+        });
+      }
+
+      Logger.info('Coupon deleted', { couponId, code: coupon.code });
+
+      res.json({
+        message: 'Coupon deleted successfully'
+      });
+    } catch (error) {
+      Logger.error('Coupon deletion failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'COUPON_DELETION_FAILED',
+          message: 'Failed to delete coupon'
+        }
+      });
+    }
+  }
+
+  // Admin: Bulk import coupons
+  static async bulkImport(req, res) {
+    try {
+      // TODO: Add admin authorization check
+      const { coupons } = req.body;
+
+      if (!Array.isArray(coupons)) {
+        return res.status(400).json({
+          error: {
+            code: 'INVALID_DATA',
+            message: 'Coupons must be an array'
+          }
+        });
+      }
+
+      const results = await Coupon.insertMany(coupons, { ordered: false });
+
+      Logger.info('Bulk coupon import completed', { count: results.length });
+
+      res.json({
+        message: 'Bulk import completed',
+        imported: results.length,
+        failed: coupons.length - results.length
+      });
+    } catch (error) {
+      Logger.error('Bulk import failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'BULK_IMPORT_FAILED',
+          message: 'Failed to import coupons'
         }
       });
     }

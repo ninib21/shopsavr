@@ -178,8 +178,103 @@ const validate = (schema) => {
   };
 };
 
+// Coupon search validation schema
+const couponSearchSchema = Joi.object({
+  domain: Joi.string()
+    .domain()
+    .required()
+    .messages({
+      'string.domain': 'Please provide a valid domain',
+      'any.required': 'Domain is required'
+    })
+});
+
+// Coupon validation schema
+const couponValidationSchema = Joi.object({
+  code: Joi.string()
+    .trim()
+    .uppercase()
+    .required()
+    .messages({
+      'any.required': 'Coupon code is required'
+    }),
+  domain: Joi.string()
+    .domain()
+    .required()
+    .messages({
+      'string.domain': 'Please provide a valid domain',
+      'any.required': 'Domain is required'
+    }),
+  orderData: Joi.object({
+    amount: Joi.number()
+      .positive()
+      .required()
+      .messages({
+        'number.positive': 'Order amount must be positive',
+        'any.required': 'Order amount is required'
+      }),
+    categories: Joi.array()
+      .items(Joi.string())
+      .default([]),
+    isNewUser: Joi.boolean().default(false),
+    userId: Joi.string().optional()
+  }).required()
+});
+
+// Best coupon search schema
+const bestCouponSchema = Joi.object({
+  amount: Joi.number()
+    .positive()
+    .required()
+    .messages({
+      'number.positive': 'Order amount must be positive',
+      'any.required': 'Order amount is required'
+    }),
+  categories: Joi.array()
+    .items(Joi.string())
+    .default([]),
+  isNewUser: Joi.boolean().default(false),
+  userId: Joi.string().optional()
+});
+
+// Validation middleware functions
+const validateRegistration = validate(registerSchema);
+const validateLogin = validate(loginSchema);
+const validateGoogleAuth = validate(googleAuthSchema);
+const validateUpdateProfile = validate(updateProfileSchema);
+const validateChangePassword = validate(changePasswordSchema);
+const validatePasswordResetRequest = validate(passwordResetRequestSchema);
+const validatePasswordReset = validate(passwordResetSchema);
+
+// Coupon validation middleware
+const validateCouponSearch = (req, res, next) => {
+  const { error } = couponSearchSchema.validate({ domain: req.params.domain });
+  if (error) {
+    return res.status(400).json({
+      error: {
+        code: 'VALIDATION_ERROR',
+        message: error.details[0].message
+      }
+    });
+  }
+  next();
+};
+
+const validateCouponValidation = validate(couponValidationSchema);
+const validateBestCoupon = validate(bestCouponSchema);
+
 module.exports = {
   validate,
+  validateRegistration,
+  validateLogin,
+  validateGoogleAuth,
+  validateUpdateProfile,
+  validateChangePassword,
+  validatePasswordResetRequest,
+  validatePasswordReset,
+  validateCouponSearch,
+  validateCouponValidation,
+  validateBestCoupon,
   schemas: {
     register: registerSchema,
     login: loginSchema,
@@ -187,6 +282,9 @@ module.exports = {
     updateProfile: updateProfileSchema,
     changePassword: changePasswordSchema,
     passwordResetRequest: passwordResetRequestSchema,
-    passwordReset: passwordResetSchema
+    passwordReset: passwordResetSchema,
+    couponSearch: couponSearchSchema,
+    couponValidation: couponValidationSchema,
+    bestCoupon: bestCouponSchema
   }
 };

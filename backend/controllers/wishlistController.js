@@ -1,5 +1,4 @@
 const WishlistItem = require('../models/WishlistItem');
-const PriceAlert = require('../models/PriceAlert');
 const User = require('../models/User');
 const Logger = require('../utils/logger');
 
@@ -9,110 +8,114 @@ class WishlistController {
     try {
       const userId = req.user.userId;
       const {
-        status,
+        status = 'active',
         category,
         tags,
         priority,
+        minPrice,
+        maxPrice,
         priceMin,
         priceMax,
-        sortBy = 'recent',
-        limit = 20,
+        sortBy = 'createdAt',
+        sortOrder = 'desc',
+        limit = 50,
         page = 1
       } = req.query;
 
-      // Build filter options
+      // Handle both minPrice/maxPrice and priceMin/priceMax
+      const actualMinPrice = minPrice || priceMin;
+      const actualMaxPrice = maxPrice || priceMax;
+
+      const skip = (parseInt(page) - 1) * parseInt(limit);
       const options = {
         status,
         category,
         tags: tags ? tags.split(',') : undefined,
         priority,
-        priceRange: (priceMin || priceMax) ? {
-          min: priceMin ? parseFloat(priceMin) : undefined,
-          max: priceMax ? parseFloat(priceMax) : undefined
-        } : undefined,
+        minPrice: actualMinPrice ? parseFloat(actualMinPrice) : undefined,
+        maxPrice: actualMaxPrice ? parseFloat(actualMaxPrice) : undefined,
         sortBy,
-        limit: Math.min(parseInt(limit) || 20, 100),
-        skip: (parseInt(page) - 1) * (parseInt(limit) || 20)
+        sortOrder,
+        limit: parseInt(limit),
+        skip
       };
 
-      // Get wishlist items
       const items = await WishlistItem.getUserWishlist(userId, options);
-
+      
       // Get total count for pagination
       const totalQuery = { userId };
-      if (status) totalQuery.status = status;
-      else totalQuery.status = { $ne: 'removed' };
+      if (status !== 'all') {
+        totalQuery.status = Array.isArray(status) ? { $in: status } : status;
+      }
       if (category) totalQuery['product.category'] = category.toLowerCase();
+      if (tags) totalQuery['metadata.tags'] = { $in: tags.split(',').map(t => t.toLowerCase()) };
       if (priority) totalQuery['metadata.priority'] = priority;
+      if (actualMinPrice !== undefined || actualMaxPrice !== undefined) {
+        totalQuery.$or = [
+          {
+            'pricing.currentPrice': {
+              ...(actualMinPrice !== undefined && { $gte: parseFloat(actualMinPrice) }),
+              ...(actualMaxPrice !== undefined && { $lte: parseFloat(actualMaxPrice) })
+            }
+          },
+          {
+            'tracking.currentPrice': {
+              ...(actualMinPrice !== undefined && { $gte: parseFloat(actualMinPrice) }),
+              ...(actualMaxPrice !== undefined && { $lte: parseFloat(actualMaxPrice) })
+            }
+          }
+        ];
+      }
 
       const totalCount = await WishlistItem.countDocuments(totalQuery);
 
-      // Format response
       const formattedItems = items.map(item => ({
         id: item._id,
-        product: {
-          name: item.product.name,
-          brand: item.product.brand,
-          model: item.product.model,
-          image: item.product.image,
-          images: item.product.images,
-          category: item.product.category,
-          subcategory: item.product.subcategory,
-          description: item.product.description
-        },
+        product: item.product,
         pricing: {
-          originalPrice: item.tracking.originalPrice,
-          currentPrice: item.tracking.currentPrice,
-          lowestPrice: item.tracking.lowestPrice,
-          highestPrice: item.tracking.highestPrice,
-          currency: item.tracking.currency,
-          priceChangePercentage: item.priceChangePercentage,
+          originalPrice: item.tracking?.originalPrice || item.pricing?.originalPrice,
+          currentPrice: item.tracking?.currentPrice || item.pricing?.currentPrice,
+          currency: item.tracking?.currency || item.pricing?.currency || 'USD',
+          lastPriceUpdate: item.tracking?.lastPriceUpdate || item.pricing?.lastPriceUpdate,
           savingsAmount: item.savingsAmount,
-          hasPriceDropped: item.hasPriceDropped
-        },
-        alerts: {
-          enabled: item.alerts.enabled,
-          priceDropThreshold: item.alerts.priceDropThreshold,
-          targetPrice: item.alerts.targetPrice,
-          isTargetPriceMet: item.isTargetPriceMet,
-          isPriceDropThresholdMet: item.isPriceDropThresholdMet
-        },
-        sources: item.sources.filter(s => s.isActive).map(source => ({
-          name: source.name,
-          domain: source.domain,
-          price: source.price,
-          availability: source.availability,
-          lastChecked: source.lastChecked
-        })),
-        metadata: {
-          priority: item.metadata.priority,
-          tags: item.metadata.tags,
-          notes: item.metadata.notes,
-          addedFrom: item.metadata.addedFrom
+          savingsPercentage: item.savingsPercentage.toFixed(2),
+          hasPriceDropped: item.savingsAmount > 0
         },
         status: item.status,
-        createdAt: item.createdAt,
-        updatedAt: item.updatedAt,
+        alerts: item.alerts,
+        tracking: {
+          priceHistory: item.tracking?.priceHistory?.slice(-10) || [], // Last 10 entries
+          lastChecked: item.tracking?.lastChecked,
+          checkFrequency: item.tracking?.checkFrequency,
+          isTracking: item.tracking?.isTracking
+        },
+        sources: item.sources || [],
+        metadata: item.metadata,
+        purchasePrice: item.purchasePrice,
         purchasedAt: item.purchasedAt,
-        purchasePrice: item.purchasePrice
+        savings: item.savings,
+        createdAt: item.createdAt,
+        updatedAt: item.updatedAt
       }));
 
       res.json({
         items: formattedItems,
         pagination: {
           currentPage: parseInt(page),
-          totalPages: Math.ceil(totalCount / options.limit),
+          totalPages: Math.ceil(totalCount / parseInt(limit)),
           totalCount,
-          hasNextPage: parseInt(page) * options.limit < totalCount,
+          hasNextPage: parseInt(page) * parseInt(limit) < totalCount,
           hasPrevPage: parseInt(page) > 1
         },
         filters: {
           status,
           category,
-          tags: tags ? tags.split(',') : [],
+          tags,
           priority,
-          priceRange: options.priceRange,
-          sortBy
+          minPrice: actualMinPrice,
+          maxPrice: actualMaxPrice,
+          sortBy,
+          sortOrder
         }
       });
     } catch (error) {
@@ -123,7 +126,7 @@ class WishlistController {
 
       res.status(500).json({
         error: {
-          code: 'WISHLIST_FETCH_FAILED',
+          code: 'WISHLIST_RETRIEVAL_FAILED',
           message: 'Failed to retrieve wishlist'
         }
       });
@@ -142,35 +145,18 @@ class WishlistController {
         metadata = {}
       } = req.body;
 
-      // Check user's subscription tier for item limits
-      const user = await User.findById(userId);
-      const itemLimit = user.hasProFeatures() ? 1000 : 50; // Free tier limit
-
-      const currentItemCount = await WishlistItem.countDocuments({
-        userId,
-        status: { $ne: 'removed' }
-      });
-
-      if (currentItemCount >= itemLimit) {
-        return res.status(403).json({
+      if (!product || !product.name || (!product.barcode && !pricing)) {
+        return res.status(400).json({
           error: {
-            code: 'WISHLIST_LIMIT_EXCEEDED',
-            message: `Wishlist limit of ${itemLimit} items exceeded`,
-            currentCount: currentItemCount,
-            limit: itemLimit,
-            upgradeUrl: user.hasProFeatures() ? null : '/upgrade'
+            code: 'VALIDATION_ERROR',
+            message: 'Product name and either barcode or pricing information are required'
           }
         });
       }
 
-      // Check for duplicate items (same barcode or similar name)
+      // Check if item already exists (only if barcode is provided)
       if (product.barcode) {
-        const existingItem = await WishlistItem.findOne({
-          userId,
-          'product.barcode': product.barcode,
-          status: { $ne: 'removed' }
-        });
-
+        const existingItem = await WishlistItem.itemExists(userId, product.barcode);
         if (existingItem) {
           return res.status(409).json({
             error: {
@@ -182,58 +168,92 @@ class WishlistController {
         }
       }
 
-      // Create wishlist item
+      // Check wishlist limits based on user tier
+      const user = await User.findById(userId);
+      const wishlistCount = await WishlistItem.countDocuments({
+        userId,
+        status: { $ne: 'removed' }
+      });
+
+      let maxItems = 50; // Free tier limit
+      if (user.subscription.tier === 'pro') maxItems = 200;
+      if (user.subscription.tier === 'pro_max') maxItems = 1000;
+
+      if (wishlistCount >= maxItems) {
+        return res.status(403).json({
+          error: {
+            code: 'WISHLIST_LIMIT_EXCEEDED',
+            message: `Wishlist limit of ${maxItems} items exceeded`,
+            limit: maxItems,
+            current: wishlistCount,
+            upgradeUrl: '/upgrade'
+          }
+        });
+      }
+
+      // Create new wishlist item
       const itemData = {
         userId,
         product: {
           name: product.name,
-          brand: product.brand,
-          model: product.model,
           barcode: product.barcode,
-          sku: product.sku,
-          image: product.image,
-          images: product.images || [],
-          category: product.category?.toLowerCase(),
-          subcategory: product.subcategory?.toLowerCase(),
+          brand: product.brand,
+          category: product.category,
           description: product.description,
-          specifications: product.specifications || new Map()
+          image: product.image,
+          imageUrl: product.imageUrl,
+          productUrl: product.productUrl
         },
-        tracking: {
-          originalPrice: pricing.originalPrice,
-          currentPrice: pricing.currentPrice || pricing.originalPrice,
-          currency: pricing.currency || 'USD',
-          checkFrequency: pricing.checkFrequency || 'daily',
-          isTracking: pricing.isTracking !== false
-        },
+        sources: sources || [],
         alerts: {
           priceDropThreshold: alerts.priceDropThreshold || 10,
           targetPrice: alerts.targetPrice,
-          enabled: alerts.enabled !== false,
           emailAlerts: alerts.emailAlerts !== false,
           pushAlerts: alerts.pushAlerts !== false
         },
-        sources: sources.map(source => ({
-          name: source.name,
-          url: source.url,
-          domain: source.domain.toLowerCase(),
-          price: source.price,
-          availability: source.availability || 'unknown'
-        })),
         metadata: {
-          addedFrom: metadata.addedFrom || 'manual',
-          platform: metadata.platform || 'web',
-          tags: metadata.tags ? metadata.tags.map(tag => tag.toLowerCase()) : [],
+          priority: metadata.priority || 'medium',
+          tags: metadata.tags || [],
           notes: metadata.notes,
-          priority: metadata.priority || 'medium'
+          source: metadata.source || 'manual'
         }
       };
 
-      const item = await WishlistItem.create(itemData);
+      // Add pricing/tracking data
+      if (pricing) {
+        const currentPrice = pricing.currentPrice || pricing.originalPrice;
+        itemData.pricing = {
+          originalPrice: pricing.originalPrice,
+          currentPrice: currentPrice,
+          currency: pricing.currency || 'USD'
+        };
+        itemData.tracking = {
+          originalPrice: pricing.originalPrice,
+          currentPrice: currentPrice,
+          currency: pricing.currency || 'USD',
+          isTracking: true
+        };
+      }
 
-      Logger.info('Wishlist item added', {
+      const item = new WishlistItem(itemData);
+      
+      // Add initial price to history if pricing exists
+      if (pricing && item.tracking) {
+        if (!item.tracking.priceHistory) item.tracking.priceHistory = [];
+        item.tracking.priceHistory.push({
+          price: pricing.currentPrice,
+          date: new Date(),
+          source: 'initial'
+        });
+      }
+
+      await item.save();
+
+      Logger.info('Item added to wishlist', {
+        userId,
         itemId: item._id,
-        productName: item.product.name,
-        userId
+        productName: product.name,
+        barcode: product.barcode
       });
 
       res.status(201).json({
@@ -242,14 +262,16 @@ class WishlistController {
           id: item._id,
           product: item.product,
           pricing: {
-            originalPrice: item.tracking.originalPrice,
-            currentPrice: item.tracking.currentPrice,
-            currency: item.tracking.currency
+            originalPrice: item.tracking?.originalPrice || item.pricing?.originalPrice,
+            currentPrice: item.tracking?.currentPrice || item.pricing?.currentPrice,
+            currency: item.tracking?.currency || item.pricing?.currency || 'USD',
+            savingsAmount: item.savingsAmount,
+            savingsPercentage: item.savingsPercentage.toFixed(2)
           },
-          alerts: item.alerts,
-          sources: item.sources,
-          metadata: item.metadata,
+          sources: item.sources || [],
           status: item.status,
+          alerts: item.alerts,
+          metadata: item.metadata,
           createdAt: item.createdAt
         }
       });
@@ -263,6 +285,80 @@ class WishlistController {
         error: {
           code: 'ADD_ITEM_FAILED',
           message: 'Failed to add item to wishlist'
+        }
+      });
+    }
+  }
+
+  // Get specific item details
+  static async getItem(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { itemId } = req.params;
+
+      if (!itemId.match(/^[0-9a-fA-F]{24}$/)) {
+        return res.status(400).json({
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Invalid item ID format'
+          }
+        });
+      }
+
+      const item = await WishlistItem.findOne({
+        _id: itemId,
+        userId,
+        status: { $ne: 'removed' }
+      });
+
+      if (!item) {
+        return res.status(404).json({
+          error: {
+            code: 'ITEM_NOT_FOUND',
+            message: 'Item not found in wishlist'
+          }
+        });
+      }
+
+      res.json({
+        item: {
+          id: item._id,
+          product: item.product,
+          pricing: {
+            originalPrice: item.tracking?.originalPrice || item.pricing?.originalPrice,
+            currentPrice: item.tracking?.currentPrice || item.pricing?.currentPrice,
+            currency: item.tracking?.currency || item.pricing?.currency || 'USD',
+            savingsAmount: item.savingsAmount,
+            savingsPercentage: item.savingsPercentage.toFixed(2)
+          },
+          sources: item.sources || [],
+          status: item.status,
+          alerts: item.alerts,
+          tracking: {
+            priceHistory: item.tracking?.priceHistory || [],
+            lastChecked: item.tracking?.lastChecked,
+            checkFrequency: item.tracking?.checkFrequency,
+            isTracking: item.tracking?.isTracking
+          },
+          metadata: item.metadata,
+          purchasePrice: item.purchasePrice,
+          purchasedAt: item.purchasedAt,
+          savings: item.savings,
+          createdAt: item.createdAt,
+          updatedAt: item.updatedAt
+        }
+      });
+    } catch (error) {
+      Logger.error('Get wishlist item failed', {
+        error: error.message,
+        userId: req.user.userId,
+        itemId: req.params.itemId
+      });
+
+      res.status(500).json({
+        error: {
+          code: 'GET_ITEM_FAILED',
+          message: 'Failed to retrieve item'
         }
       });
     }
@@ -285,7 +381,7 @@ class WishlistController {
         return res.status(404).json({
           error: {
             code: 'ITEM_NOT_FOUND',
-            message: 'Wishlist item not found'
+            message: 'Item not found in wishlist'
           }
         });
       }
@@ -294,37 +390,22 @@ class WishlistController {
       if (updates.product) {
         Object.assign(item.product, updates.product);
       }
-
       if (updates.alerts) {
         Object.assign(item.alerts, updates.alerts);
       }
-
       if (updates.metadata) {
-        if (updates.metadata.tags) {
-          item.metadata.tags = updates.metadata.tags.map(tag => tag.toLowerCase());
-        }
-        if (updates.metadata.notes !== undefined) {
-          item.metadata.notes = updates.metadata.notes;
-        }
-        if (updates.metadata.priority) {
-          item.metadata.priority = updates.metadata.priority;
-        }
+        Object.assign(item.metadata, updates.metadata);
       }
-
       if (updates.tracking) {
-        if (updates.tracking.checkFrequency) {
-          item.tracking.checkFrequency = updates.tracking.checkFrequency;
-        }
-        if (updates.tracking.isTracking !== undefined) {
-          item.tracking.isTracking = updates.tracking.isTracking;
-        }
+        if (!item.tracking) item.tracking = {};
+        Object.assign(item.tracking, updates.tracking);
       }
 
       await item.save();
 
       Logger.info('Wishlist item updated', {
-        itemId: item._id,
         userId,
+        itemId,
         updates: Object.keys(updates)
       });
 
@@ -333,26 +414,93 @@ class WishlistController {
         item: {
           id: item._id,
           product: item.product,
-          alerts: item.alerts,
-          metadata: item.metadata,
-          tracking: {
-            checkFrequency: item.tracking.checkFrequency,
-            isTracking: item.tracking.isTracking
+          pricing: {
+            originalPrice: item.tracking?.originalPrice || item.pricing?.originalPrice,
+            currentPrice: item.tracking?.currentPrice || item.pricing?.currentPrice,
+            currency: item.tracking?.currency || item.pricing?.currency || 'USD',
+            savingsAmount: item.savingsAmount,
+            savingsPercentage: item.savingsPercentage.toFixed(2)
           },
+          status: item.status,
+          alerts: item.alerts,
+          tracking: {
+            priceHistory: item.tracking?.priceHistory || [],
+            lastChecked: item.tracking?.lastChecked,
+            checkFrequency: item.tracking?.checkFrequency,
+            isTracking: item.tracking?.isTracking
+          },
+          metadata: item.metadata,
           updatedAt: item.updatedAt
         }
       });
     } catch (error) {
       Logger.error('Update wishlist item failed', {
         error: error.message,
-        itemId: req.params.itemId,
-        userId: req.user.userId
+        userId: req.user.userId,
+        itemId: req.params.itemId
       });
 
       res.status(500).json({
         error: {
           code: 'UPDATE_ITEM_FAILED',
-          message: 'Failed to update wishlist item'
+          message: 'Failed to update item'
+        }
+      });
+    }
+  }
+
+  // Mark item as purchased
+  static async markAsPurchased(req, res) {
+    try {
+      const userId = req.user.userId;
+      const { itemId } = req.params;
+      const { purchasePrice } = req.body;
+
+      const item = await WishlistItem.findOne({
+        _id: itemId,
+        userId,
+        status: 'active'
+      });
+
+      if (!item) {
+        return res.status(404).json({
+          error: {
+            code: 'ITEM_NOT_FOUND',
+            message: 'Active item not found in wishlist'
+          }
+        });
+      }
+
+      await item.markAsPurchased(purchasePrice);
+
+      Logger.info('Item marked as purchased', {
+        userId,
+        itemId,
+        purchasePrice: item.purchasePrice,
+        savings: item.savings
+      });
+
+      res.json({
+        message: 'Item marked as purchased successfully',
+        item: {
+          id: item._id,
+          status: item.status,
+          purchasePrice: item.purchasePrice,
+          purchasedAt: item.purchasedAt,
+          savings: item.savings
+        }
+      });
+    } catch (error) {
+      Logger.error('Mark as purchased failed', {
+        error: error.message,
+        userId: req.user.userId,
+        itemId: req.params.itemId
+      });
+
+      res.status(500).json({
+        error: {
+          code: 'PURCHASE_MARK_FAILED',
+          message: 'Failed to mark item as purchased'
         }
       });
     }
@@ -374,31 +522,28 @@ class WishlistController {
         return res.status(404).json({
           error: {
             code: 'ITEM_NOT_FOUND',
-            message: 'Wishlist item not found'
+            message: 'Item not found in wishlist'
           }
         });
       }
 
-      // Soft delete - mark as removed
-      item.status = 'removed';
-      item.tracking.isTracking = false;
-      await item.save();
+      await item.remove();
 
-      Logger.info('Wishlist item removed', {
-        itemId: item._id,
-        productName: item.product.name,
-        userId
+      Logger.info('Item removed from wishlist', {
+        userId,
+        itemId,
+        productName: item.product.name
       });
 
       res.json({
         message: 'Item removed from wishlist successfully',
-        itemId: item._id
+        itemId: item._id.toString()
       });
     } catch (error) {
       Logger.error('Remove wishlist item failed', {
         error: error.message,
-        itemId: req.params.itemId,
-        userId: req.user.userId
+        userId: req.user.userId,
+        itemId: req.params.itemId
       });
 
       res.status(500).json({
@@ -410,132 +555,45 @@ class WishlistController {
     }
   }
 
-  // Mark item as purchased
-  static async markAsPurchased(req, res) {
-    try {
-      const userId = req.user.userId;
-      const { itemId } = req.params;
-      const { purchasePrice, purchaseDate } = req.body;
-
-      const item = await WishlistItem.findOne({
-        _id: itemId,
-        userId,
-        status: 'active'
-      });
-
-      if (!item) {
-        return res.status(404).json({
-          error: {
-            code: 'ITEM_NOT_FOUND',
-            message: 'Active wishlist item not found'
-          }
-        });
-      }
-
-      await item.markAsPurchased(purchasePrice);
-
-      if (purchaseDate) {
-        item.purchasedAt = new Date(purchaseDate);
-        await item.save();
-      }
-
-      Logger.info('Wishlist item marked as purchased', {
-        itemId: item._id,
-        productName: item.product.name,
-        purchasePrice: item.purchasePrice,
-        userId
-      });
-
-      res.json({
-        message: 'Item marked as purchased successfully',
-        item: {
-          id: item._id,
-          product: item.product,
-          status: item.status,
-          purchasedAt: item.purchasedAt,
-          purchasePrice: item.purchasePrice,
-          savings: item.tracking.originalPrice - item.purchasePrice
-        }
-      });
-    } catch (error) {
-      Logger.error('Mark as purchased failed', {
-        error: error.message,
-        itemId: req.params.itemId,
-        userId: req.user.userId
-      });
-
-      res.status(500).json({
-        error: {
-          code: 'MARK_PURCHASED_FAILED',
-          message: 'Failed to mark item as purchased'
-        }
-      });
-    }
-  }
-
   // Get wishlist statistics
-  static async getWishlistStats(req, res) {
+  static async getStats(req, res) {
     try {
       const userId = req.user.userId;
+      const { dateFrom, dateTo } = req.query;
 
-      const stats = await WishlistItem.getUserWishlistStats(userId);
-      const statsData = stats[0] || { stats: [], totalItems: 0, totalValue: 0 };
+      const stats = await WishlistItem.getWishlistStats(userId, {
+        dateFrom,
+        dateTo
+      });
 
-      // Calculate additional metrics
-      const statusBreakdown = {};
-      let totalSavings = 0;
-      let averagePrice = 0;
+      const summary = stats[0] || {
+        totalItems: 0,
+        totalValue: 0,
+        totalSavings: 0,
+        breakdown: []
+      };
 
-      statsData.stats.forEach(stat => {
-        statusBreakdown[stat.status] = {
-          count: stat.count,
-          totalValue: stat.totalValue,
-          avgPrice: stat.avgPrice
+      // Format breakdown by status
+      const breakdown = {};
+      summary.breakdown.forEach(item => {
+        breakdown[item.status] = {
+          count: item.count,
+          totalValue: item.totalValue,
+          totalSavings: item.totalSavings
         };
-
-        if (stat.status === 'active') {
-          averagePrice = stat.avgPrice;
-        }
-      });
-
-      // Get price drop alerts count
-      const alertsCount = await PriceAlert.countDocuments({
-        userId,
-        status: { $in: ['pending', 'sent'] },
-        'notification.inApp.read': false
-      });
-
-      // Get items with recent price drops
-      const recentDrops = await WishlistItem.find({
-        userId,
-        status: 'active',
-        'tracking.currentPrice': { $lt: '$tracking.originalPrice' }
-      })
-      .sort({ 'tracking.lastChecked': -1 })
-      .limit(5)
-      .select('product.name tracking.originalPrice tracking.currentPrice tracking.lastChecked');
-
-      recentDrops.forEach(item => {
-        totalSavings += item.tracking.originalPrice - item.tracking.currentPrice;
       });
 
       res.json({
         summary: {
-          totalItems: statsData.totalItems,
-          totalValue: statsData.totalValue,
-          averagePrice: averagePrice || 0,
-          totalSavings,
-          unreadAlerts: alertsCount
+          totalItems: summary.totalItems,
+          totalValue: summary.totalValue,
+          totalSavings: summary.totalSavings
         },
-        breakdown: statusBreakdown,
-        recentPriceDrops: recentDrops.map(item => ({
-          id: item._id,
-          name: item.product.name,
-          originalPrice: item.tracking.originalPrice,
-          currentPrice: item.tracking.currentPrice,
-          savings: item.tracking.originalPrice - item.tracking.currentPrice,
-          lastChecked: item.tracking.lastChecked
-        })),
+        breakdown,
+        dateRange: {
+          from: dateFrom || null,
+          to: dateTo || null
+        },
         generatedAt: new Date().toISOString()
       });
     } catch (error) {
@@ -546,102 +604,8 @@ class WishlistController {
 
       res.status(500).json({
         error: {
-          code: 'STATS_FAILED',
+          code: 'STATS_RETRIEVAL_FAILED',
           message: 'Failed to retrieve wishlist statistics'
-        }
-      });
-    }
-  }
-
-  // Get single wishlist item details
-  static async getItem(req, res) {
-    try {
-      const userId = req.user.userId;
-      const { itemId } = req.params;
-
-      const item = await WishlistItem.findOne({
-        _id: itemId,
-        userId,
-        status: { $ne: 'removed' }
-      });
-
-      if (!item) {
-        return res.status(404).json({
-          error: {
-            code: 'ITEM_NOT_FOUND',
-            message: 'Wishlist item not found'
-          }
-        });
-      }
-
-      // Get recent price history (last 30 entries)
-      const recentPriceHistory = item.tracking.priceHistory
-        .slice(-30)
-        .map(entry => ({
-          price: entry.price,
-          source: entry.source,
-          availability: entry.availability,
-          recordedAt: entry.recordedAt
-        }));
-
-      res.json({
-        item: {
-          id: item._id,
-          product: item.product,
-          pricing: {
-            originalPrice: item.tracking.originalPrice,
-            currentPrice: item.tracking.currentPrice,
-            lowestPrice: item.tracking.lowestPrice,
-            highestPrice: item.tracking.highestPrice,
-            currency: item.tracking.currency,
-            priceChangePercentage: item.priceChangePercentage,
-            savingsAmount: item.savingsAmount,
-            hasPriceDropped: item.hasPriceDropped,
-            lastChecked: item.tracking.lastChecked
-          },
-          alerts: {
-            enabled: item.alerts.enabled,
-            priceDropThreshold: item.alerts.priceDropThreshold,
-            targetPrice: item.alerts.targetPrice,
-            emailAlerts: item.alerts.emailAlerts,
-            pushAlerts: item.alerts.pushAlerts,
-            isTargetPriceMet: item.isTargetPriceMet,
-            isPriceDropThresholdMet: item.isPriceDropThresholdMet,
-            lastAlertSent: item.alerts.lastAlertSent
-          },
-          sources: item.sources.map(source => ({
-            name: source.name,
-            url: source.url,
-            domain: source.domain,
-            price: source.price,
-            availability: source.availability,
-            lastChecked: source.lastChecked,
-            isActive: source.isActive
-          })),
-          tracking: {
-            checkFrequency: item.tracking.checkFrequency,
-            isTracking: item.tracking.isTracking,
-            priceHistory: recentPriceHistory
-          },
-          metadata: item.metadata,
-          status: item.status,
-          createdAt: item.createdAt,
-          updatedAt: item.updatedAt,
-          purchasedAt: item.purchasedAt,
-          purchasePrice: item.purchasePrice
-        }
-      });
-    } catch (error) {
-      Logger.error('Get wishlist item failed', {
-        error: error.message,
-        itemId: req.params.itemId,
-        userId: req.user.userId
-      });
-
-      res.status(500).json({
-        error: {
-          code: 'GET_ITEM_FAILED',
-          message: 'Failed to retrieve wishlist item'
         }
       });
     }

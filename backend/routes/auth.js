@@ -1,19 +1,21 @@
 const express = require('express');
-const AuthController = require('../controllers/authController');
-const { validate, schemas } = require('../utils/validation');
-const authMiddleware = require('../middleware/auth');
-const { authLimiter } = require('../middleware/rateLimiting');
-
 const router = express.Router();
+const authController = require('../controllers/authController');
+const authMiddleware = require('../middleware/auth');
+const { validateRegistration, validateLogin, validateGoogleAuth } = require('../utils/validation');
 
-// Public routes with auth rate limiting
-router.post('/register', authLimiter, validate(schemas.register), AuthController.register);
-router.post('/login', authLimiter, validate(schemas.login), AuthController.login);
-router.post('/google', authLimiter, validate(schemas.googleAuth), AuthController.googleAuth);
-router.post('/refresh', authLimiter, AuthController.refresh);
+// Public routes
+router.post('/register', validateRegistration, authController.register);
+router.post('/login', validateLogin, authController.login);
+router.post('/google', validateGoogleAuth, authController.googleAuth);
+router.post('/refresh', authController.refresh);
+router.post('/logout', authController.logout);
+router.post('/forgot-password', authController.forgotPassword);
+router.post('/reset-password', authController.resetPassword);
 
 // Protected routes
-router.post('/logout', authMiddleware, AuthController.logout);
-router.get('/profile', authMiddleware, AuthController.getProfile);
+router.get('/profile', authMiddleware, authController.getProfile);
+router.put('/profile', authMiddleware, authController.updateProfile);
+router.delete('/account', authMiddleware, authController.deleteAccount);
 
 module.exports = router;

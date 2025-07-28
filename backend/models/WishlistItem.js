@@ -1,38 +1,5 @@
 const mongoose = require('mongoose');
 
-const priceHistorySchema = new mongoose.Schema({
-  price: {
-    type: Number,
-    required: true,
-    min: 0
-  },
-  currency: {
-    type: String,
-    default: 'USD',
-    uppercase: true,
-    maxlength: 3
-  },
-  source: {
-    type: String,
-    required: true,
-    trim: true
-  },
-  url: {
-    type: String,
-    trim: true
-  },
-  availability: {
-    type: String,
-    enum: ['in_stock', 'out_of_stock', 'limited', 'unknown'],
-    default: 'unknown'
-  },
-  recordedAt: {
-    type: Date,
-    default: Date.now,
-    index: true
-  }
-}, { _id: false });
-
 const wishlistItemSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
@@ -47,88 +14,48 @@ const wishlistItemSchema = new mongoose.Schema({
       trim: true,
       maxlength: [200, 'Product name cannot exceed 200 characters']
     },
+    barcode: {
+      type: String,
+      trim: true,
+      index: true
+    },
     brand: {
       type: String,
       trim: true,
       maxlength: [100, 'Brand name cannot exceed 100 characters']
     },
-    model: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'Model cannot exceed 100 characters']
-    },
-    barcode: {
-      type: String,
-      trim: true,
-      sparse: true, // Allow multiple null values but unique non-null values
-      index: true
-    },
-    sku: {
-      type: String,
-      trim: true,
-      maxlength: [100, 'SKU cannot exceed 100 characters']
-    },
-    image: {
-      type: String,
-      trim: true,
-      validate: {
-        validator: function(v) {
-          return !v || /^https?:\/\/.+/.test(v);
-        },
-        message: 'Image must be a valid URL'
-      }
-    },
-    images: [{
-      type: String,
-      trim: true,
-      validate: {
-        validator: function(v) {
-          return /^https?:\/\/.+/.test(v);
-        },
-        message: 'Image must be a valid URL'
-      }
-    }],
     category: {
       type: String,
       trim: true,
       lowercase: true,
       maxlength: [50, 'Category cannot exceed 50 characters']
     },
-    subcategory: {
-      type: String,
-      trim: true,
-      lowercase: true,
-      maxlength: [50, 'Subcategory cannot exceed 50 characters']
-    },
     description: {
       type: String,
       trim: true,
       maxlength: [1000, 'Description cannot exceed 1000 characters']
     },
-    specifications: {
-      type: Map,
-      of: String,
-      default: new Map()
+    image: {
+      type: String,
+      trim: true
+    },
+    imageUrl: {
+      type: String,
+      trim: true
+    },
+    productUrl: {
+      type: String,
+      trim: true
     }
   },
-  tracking: {
+  pricing: {
     originalPrice: {
       type: Number,
-      required: [true, 'Original price is required'],
-      min: 0
+      min: [0, 'Price cannot be negative']
     },
     currentPrice: {
       type: Number,
-      required: [true, 'Current price is required'],
-      min: 0
-    },
-    lowestPrice: {
-      type: Number,
-      min: 0
-    },
-    highestPrice: {
-      type: Number,
-      min: 0
+      min: [0, 'Price cannot be negative']
     },
     currency: {
       type: String,
@@ -136,11 +63,48 @@ const wishlistItemSchema = new mongoose.Schema({
       uppercase: true,
       maxlength: 3
     },
-    priceHistory: [priceHistorySchema],
+    lastPriceUpdate: {
+      type: Date,
+      default: Date.now
+    }
+  },
+  tracking: {
+    originalPrice: {
+      type: Number,
+      min: [0, 'Price cannot be negative']
+    },
+    currentPrice: {
+      type: Number,
+      min: [0, 'Price cannot be negative']
+    },
+    currency: {
+      type: String,
+      default: 'USD',
+      uppercase: true,
+      maxlength: 3
+    },
+    lastPriceUpdate: {
+      type: Date,
+      default: Date.now
+    },
+    priceHistory: [{
+      price: {
+        type: Number,
+        required: true,
+        min: 0
+      },
+      date: {
+        type: Date,
+        default: Date.now
+      },
+      source: {
+        type: String,
+        default: 'system'
+      }
+    }],
     lastChecked: {
       type: Date,
-      default: Date.now,
-      index: true
+      default: Date.now
     },
     checkFrequency: {
       type: String,
@@ -152,34 +116,6 @@ const wishlistItemSchema = new mongoose.Schema({
       default: true
     }
   },
-  alerts: {
-    priceDropThreshold: {
-      type: Number,
-      min: 0,
-      max: 100,
-      default: 10 // 10% price drop
-    },
-    targetPrice: {
-      type: Number,
-      min: 0
-    },
-    enabled: {
-      type: Boolean,
-      default: true
-    },
-    emailAlerts: {
-      type: Boolean,
-      default: true
-    },
-    pushAlerts: {
-      type: Boolean,
-      default: true
-    },
-    lastAlertSent: {
-      type: Date,
-      default: null
-    }
-  },
   sources: [{
     name: {
       type: String,
@@ -189,80 +125,78 @@ const wishlistItemSchema = new mongoose.Schema({
     url: {
       type: String,
       required: true,
-      trim: true,
-      validate: {
-        validator: function(v) {
-          return /^https?:\/\/.+/.test(v);
-        },
-        message: 'Source URL must be valid'
-      }
+      trim: true
     },
     domain: {
       type: String,
       required: true,
-      lowercase: true,
-      trim: true
+      trim: true,
+      lowercase: true
     },
     price: {
       type: Number,
+      required: true,
       min: 0
-    },
-    availability: {
-      type: String,
-      enum: ['in_stock', 'out_of_stock', 'limited', 'unknown'],
-      default: 'unknown'
     },
     lastChecked: {
       type: Date,
       default: Date.now
+    }
+  }],
+  status: {
+    type: String,
+    enum: ['active', 'purchased', 'removed', 'out_of_stock'],
+    default: 'active',
+    index: true
+  },
+  alerts: {
+    priceDropThreshold: {
+      type: Number,
+      default: 10,
+      min: [0, 'Price drop threshold cannot be negative']
     },
-    isActive: {
+    targetPrice: {
+      type: Number,
+      min: [0, 'Target price cannot be negative']
+    },
+    emailAlerts: {
+      type: Boolean,
+      default: true
+    },
+    pushAlerts: {
       type: Boolean,
       default: true
     }
-  }],
+  },
+
   metadata: {
-    addedFrom: {
+    priority: {
       type: String,
-      enum: ['manual', 'barcode_scan', 'url_import', 'extension', 'mobile_app'],
-      default: 'manual'
-    },
-    platform: {
-      type: String,
-      enum: ['web', 'mobile', 'extension'],
-      default: 'web'
+      enum: ['low', 'medium', 'high'],
+      default: 'medium'
     },
     tags: [{
       type: String,
       trim: true,
-      lowercase: true,
-      maxlength: 30
+      lowercase: true
     }],
     notes: {
       type: String,
       trim: true,
       maxlength: [500, 'Notes cannot exceed 500 characters']
     },
-    priority: {
+    source: {
       type: String,
-      enum: ['low', 'medium', 'high'],
-      default: 'medium'
+      enum: ['manual', 'extension', 'mobile', 'api'],
+      default: 'manual'
     }
-  },
-  status: {
-    type: String,
-    enum: ['active', 'purchased', 'removed', 'unavailable'],
-    default: 'active',
-    index: true
-  },
-  purchasedAt: {
-    type: Date,
-    default: null
   },
   purchasePrice: {
     type: Number,
-    min: 0,
-    default: null
+    min: [0, 'Purchase price cannot be negative']
+  },
+  purchasedAt: {
+    type: Date
   }
 }, {
   timestamps: true,
@@ -277,305 +211,237 @@ const wishlistItemSchema = new mongoose.Schema({
 // Compound indexes for performance
 wishlistItemSchema.index({ userId: 1, status: 1, createdAt: -1 });
 wishlistItemSchema.index({ userId: 1, 'product.category': 1 });
-wishlistItemSchema.index({ 'product.barcode': 1 }, { sparse: true });
-wishlistItemSchema.index({ 'tracking.lastChecked': 1, 'tracking.isTracking': 1 });
-wishlistItemSchema.index({ 'alerts.enabled': 1, 'tracking.currentPrice': 1 });
-
-// Virtual for price change percentage
-wishlistItemSchema.virtual('priceChangePercentage').get(function() {
-  if (this.tracking.originalPrice === 0) return 0;
-  return ((this.tracking.currentPrice - this.tracking.originalPrice) / this.tracking.originalPrice) * 100;
-});
+wishlistItemSchema.index({ userId: 1, 'metadata.priority': 1 });
+wishlistItemSchema.index({ 'product.barcode': 1, userId: 1 });
 
 // Virtual for savings amount
 wishlistItemSchema.virtual('savingsAmount').get(function() {
-  return Math.max(0, this.tracking.originalPrice - this.tracking.currentPrice);
+  const originalPrice = this.tracking?.originalPrice || this.pricing?.originalPrice || 0;
+  const currentPrice = this.tracking?.currentPrice || this.pricing?.currentPrice || 0;
+  return Math.max(0, originalPrice - currentPrice);
 });
 
-// Virtual for checking if price dropped
-wishlistItemSchema.virtual('hasPriceDropped').get(function() {
-  return this.tracking.currentPrice < this.tracking.originalPrice;
+// Virtual for savings percentage
+wishlistItemSchema.virtual('savingsPercentage').get(function() {
+  const originalPrice = this.tracking?.originalPrice || this.pricing?.originalPrice || 0;
+  const currentPrice = this.tracking?.currentPrice || this.pricing?.currentPrice || 0;
+  if (originalPrice === 0) return 0;
+  return ((originalPrice - currentPrice) / originalPrice) * 100;
 });
 
-// Virtual for checking if target price is met
-wishlistItemSchema.virtual('isTargetPriceMet').get(function() {
-  return this.alerts.targetPrice && this.tracking.currentPrice <= this.alerts.targetPrice;
+// Virtual for purchase savings
+wishlistItemSchema.virtual('savings').get(function() {
+  if (!this.purchasePrice) return 0;
+  const originalPrice = this.tracking?.originalPrice || this.pricing?.originalPrice || 0;
+  return Math.max(0, originalPrice - this.purchasePrice);
 });
-
-// Virtual for checking if price drop threshold is met
-wishlistItemSchema.virtual('isPriceDropThresholdMet').get(function() {
-  const dropPercentage = Math.abs(this.priceChangePercentage);
-  return dropPercentage >= this.alerts.priceDropThreshold;
-});
-
-// Pre-save middleware to update price tracking
-wishlistItemSchema.pre('save', function(next) {
-  // Update lowest and highest prices
-  if (this.tracking.lowestPrice === undefined || this.tracking.currentPrice < this.tracking.lowestPrice) {
-    this.tracking.lowestPrice = this.tracking.currentPrice;
-  }
-  
-  if (this.tracking.highestPrice === undefined || this.tracking.currentPrice > this.tracking.highestPrice) {
-    this.tracking.highestPrice = this.tracking.currentPrice;
-  }
-
-  // Limit price history to last 100 entries
-  if (this.tracking.priceHistory.length > 100) {
-    this.tracking.priceHistory = this.tracking.priceHistory.slice(-100);
-  }
-
-  next();
-});
-
-// Instance method to add price history entry
-wishlistItemSchema.methods.addPriceHistory = function(priceData) {
-  const { price, source, url, availability = 'unknown' } = priceData;
-  
-  this.tracking.priceHistory.push({
-    price,
-    currency: this.tracking.currency,
-    source,
-    url,
-    availability,
-    recordedAt: new Date()
-  });
-
-  // Update current price if this is the most recent entry
-  this.tracking.currentPrice = price;
-  this.tracking.lastChecked = new Date();
-
-  return this.save();
-};
 
 // Instance method to update price
-wishlistItemSchema.methods.updatePrice = async function(newPrice, source, options = {}) {
-  const oldPrice = this.tracking.currentPrice;
-  
-  // Add to price history (this saves the document)
-  await this.addPriceHistory({
-    price: newPrice,
-    source,
-    url: options.url,
-    availability: options.availability
-  });
-
-  // Check if alert should be triggered
-  const shouldAlert = this.shouldTriggerAlert(oldPrice, newPrice);
-  
-  return { shouldAlert, oldPrice, newPrice };
-};
-
-// Instance method to check if alert should be triggered
-wishlistItemSchema.methods.shouldTriggerAlert = function(oldPrice, newPrice) {
-  if (!this.alerts.enabled) return false;
-  
-  // Check target price
-  if (this.alerts.targetPrice && newPrice <= this.alerts.targetPrice) {
-    return true;
+wishlistItemSchema.methods.updatePrice = function(newPrice, source = 'system') {
+  // Update both pricing and tracking if they exist
+  if (this.pricing) {
+    this.pricing.currentPrice = newPrice;
+    this.pricing.lastPriceUpdate = new Date();
   }
-  
-  // Check price drop threshold
-  if (oldPrice > 0) {
-    const dropPercentage = ((oldPrice - newPrice) / oldPrice) * 100;
-    if (dropPercentage >= this.alerts.priceDropThreshold) {
-      return true;
+  if (this.tracking) {
+    this.tracking.currentPrice = newPrice;
+    this.tracking.lastChecked = new Date();
+    
+    // Add to price history
+    if (!this.tracking.priceHistory) this.tracking.priceHistory = [];
+    this.tracking.priceHistory.push({
+      price: newPrice,
+      date: new Date(),
+      source
+    });
+    
+    // Keep only last 100 price history entries
+    if (this.tracking.priceHistory.length > 100) {
+      this.tracking.priceHistory = this.tracking.priceHistory.slice(-100);
     }
   }
   
-  return false;
+  return this.save();
 };
 
 // Instance method to mark as purchased
-wishlistItemSchema.methods.markAsPurchased = function(purchasePrice) {
+wishlistItemSchema.methods.markAsPurchased = function(purchasePrice = null) {
   this.status = 'purchased';
+  const currentPrice = this.tracking?.currentPrice || this.pricing?.currentPrice || 0;
+  this.purchasePrice = purchasePrice || currentPrice;
   this.purchasedAt = new Date();
-  this.purchasePrice = purchasePrice || this.tracking.currentPrice;
-  this.tracking.isTracking = false;
-  return this.save();
-};
-
-// Instance method to add source
-wishlistItemSchema.methods.addSource = function(sourceData) {
-  const { name, url, domain, price, availability = 'unknown' } = sourceData;
-  
-  // Check if source already exists
-  const existingSource = this.sources.find(s => s.domain === domain.toLowerCase());
-  
-  if (existingSource) {
-    existingSource.price = price;
-    existingSource.availability = availability;
-    existingSource.lastChecked = new Date();
-    existingSource.isActive = true;
-  } else {
-    this.sources.push({
-      name,
-      url,
-      domain: domain.toLowerCase(),
-      price,
-      availability,
-      lastChecked: new Date(),
-      isActive: true
-    });
+  if (this.tracking) {
+    this.tracking.isTracking = false;
   }
-  
   return this.save();
 };
 
-// Instance method to remove source
-wishlistItemSchema.methods.removeSource = function(domain) {
-  this.sources = this.sources.filter(s => s.domain !== domain.toLowerCase());
+// Instance method to remove from wishlist
+wishlistItemSchema.methods.remove = function() {
+  this.status = 'removed';
+  if (this.tracking) {
+    this.tracking.isTracking = false;
+  }
   return this.save();
 };
 
-// Static method to get user's wishlist with filters
+// Suppress mongoose warning for remove method
+wishlistItemSchema.method('remove', function() {
+  this.status = 'removed';
+  if (this.tracking) {
+    this.tracking.isTracking = false;
+  }
+  return this.save();
+}, { suppressWarning: true });
+
+// Static method to get user wishlist
 wishlistItemSchema.statics.getUserWishlist = function(userId, options = {}) {
+  const {
+    status = 'active',
+    category,
+    tags,
+    priority,
+    minPrice,
+    maxPrice,
+    sortBy = 'createdAt',
+    sortOrder = 'desc',
+    limit = 50,
+    skip = 0
+  } = options;
+
   const query = { userId };
   
-  if (options.status) {
-    query.status = options.status;
-  } else {
-    query.status = { $ne: 'removed' }; // Exclude removed items by default
-  }
-  
-  if (options.category) {
-    query['product.category'] = options.category.toLowerCase();
-  }
-  
-  if (options.tags && options.tags.length > 0) {
-    query['metadata.tags'] = { $in: options.tags.map(tag => tag.toLowerCase()) };
-  }
-  
-  if (options.priority) {
-    query['metadata.priority'] = options.priority;
-  }
-
-  if (options.priceRange) {
-    const { min, max } = options.priceRange;
-    if (min !== undefined) query['tracking.currentPrice'] = { $gte: min };
-    if (max !== undefined) {
-      query['tracking.currentPrice'] = { 
-        ...query['tracking.currentPrice'], 
-        $lte: max 
-      };
+  if (status !== 'all') {
+    if (Array.isArray(status)) {
+      query.status = { $in: status };
+    } else {
+      query.status = status;
     }
   }
-
-  let queryBuilder = this.find(query);
   
-  // Sorting
-  const sortOptions = {
-    'recent': { createdAt: -1 },
-    'price_low': { 'tracking.currentPrice': 1 },
-    'price_high': { 'tracking.currentPrice': -1 },
-    'name': { 'product.name': 1 },
-    'priority': { 'metadata.priority': -1, createdAt: -1 }
-  };
-  
-  const sortBy = options.sortBy || 'recent';
-  queryBuilder = queryBuilder.sort(sortOptions[sortBy] || sortOptions.recent);
-  
-  // Pagination
-  if (options.limit) {
-    queryBuilder = queryBuilder.limit(parseInt(options.limit));
+  if (category) {
+    query['product.category'] = category.toLowerCase();
   }
   
-  if (options.skip) {
-    queryBuilder = queryBuilder.skip(parseInt(options.skip));
+  if (tags && tags.length > 0) {
+    query['metadata.tags'] = { $in: tags.map(tag => tag.toLowerCase()) };
   }
   
-  return queryBuilder;
-};
-
-// Static method to get items needing price updates
-wishlistItemSchema.statics.getItemsForPriceUpdate = function(options = {}) {
-  const now = new Date();
-  const query = {
-    status: 'active',
-    'tracking.isTracking': true
-  };
-
-  // Calculate cutoff time based on check frequency
-  const cutoffTimes = {
-    hourly: new Date(now.getTime() - 60 * 60 * 1000),
-    daily: new Date(now.getTime() - 24 * 60 * 60 * 1000),
-    weekly: new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-  };
-
-  if (options.frequency) {
-    query['tracking.checkFrequency'] = options.frequency;
-    query['tracking.lastChecked'] = { $lt: cutoffTimes[options.frequency] };
-  } else {
-    // Get items that need checking based on their individual frequency
-    query.$or = Object.keys(cutoffTimes).map(freq => ({
-      'tracking.checkFrequency': freq,
-      'tracking.lastChecked': { $lt: cutoffTimes[freq] }
-    }));
+  if (priority) {
+    query['metadata.priority'] = priority;
   }
-
-  return this.find(query)
-    .sort({ 'tracking.lastChecked': 1 })
-    .limit(options.limit || 100);
-};
-
-// Static method to get price drop alerts
-wishlistItemSchema.statics.getPriceDropAlerts = function(userId) {
-  return this.find({
-    userId,
-    status: 'active',
-    'alerts.enabled': true,
-    $or: [
-      { 
-        'alerts.targetPrice': { $exists: true },
-        'tracking.currentPrice': { $lte: this.alerts.targetPrice }
+  
+  if (minPrice !== undefined || maxPrice !== undefined) {
+    query.$or = [
+      {
+        'pricing.currentPrice': {
+          ...(minPrice !== undefined && { $gte: minPrice }),
+          ...(maxPrice !== undefined && { $lte: maxPrice })
+        }
       },
       {
-        $expr: {
-          $gte: [
-            {
-              $multiply: [
-                { $divide: [
-                  { $subtract: ['$tracking.originalPrice', '$tracking.currentPrice'] },
-                  '$tracking.originalPrice'
-                ]},
-                100
-              ]
-            },
-            '$alerts.priceDropThreshold'
-          ]
+        'tracking.currentPrice': {
+          ...(minPrice !== undefined && { $gte: minPrice }),
+          ...(maxPrice !== undefined && { $lte: maxPrice })
         }
       }
-    ]
-  });
+    ];
+  }
+
+  const sortOptions = {};
+  sortOptions[sortBy] = sortOrder === 'desc' ? -1 : 1;
+
+  return this.find(query)
+    .sort(sortOptions)
+    .limit(Math.min(parseInt(limit) || 50, 100))
+    .skip(parseInt(skip) || 0);
 };
 
 // Static method to get wishlist statistics
-wishlistItemSchema.statics.getUserWishlistStats = function(userId) {
+wishlistItemSchema.statics.getWishlistStats = function(userId, options = {}) {
+  const { dateFrom, dateTo } = options;
+  
+  const matchStage = { userId: new mongoose.Types.ObjectId(userId) };
+  
+  if (dateFrom || dateTo) {
+    matchStage.createdAt = {};
+    if (dateFrom) matchStage.createdAt.$gte = new Date(dateFrom);
+    if (dateTo) matchStage.createdAt.$lte = new Date(dateTo);
+  }
+
   return this.aggregate([
-    { $match: { userId: new mongoose.Types.ObjectId(userId) } },
+    { $match: matchStage },
     {
       $group: {
         _id: '$status',
         count: { $sum: 1 },
-        totalValue: { $sum: '$tracking.currentPrice' },
-        avgPrice: { $avg: '$tracking.currentPrice' }
+        totalValue: { 
+          $sum: { 
+            $ifNull: ['$tracking.currentPrice', '$pricing.currentPrice'] 
+          } 
+        },
+        totalSavings: { 
+          $sum: { 
+            $subtract: [
+              { $ifNull: ['$tracking.originalPrice', '$pricing.originalPrice'] },
+              { $ifNull: ['$tracking.currentPrice', '$pricing.currentPrice'] }
+            ] 
+          } 
+        }
       }
     },
     {
       $group: {
         _id: null,
-        stats: {
+        breakdown: {
           $push: {
             status: '$_id',
             count: '$count',
             totalValue: '$totalValue',
-            avgPrice: '$avgPrice'
+            totalSavings: '$totalSavings'
           }
         },
         totalItems: { $sum: '$count' },
-        totalValue: { $sum: '$totalValue' }
+        totalValue: { $sum: '$totalValue' },
+        totalSavings: { $sum: '$totalSavings' }
       }
     }
   ]);
+};
+
+// Static method to check if item exists for user
+wishlistItemSchema.statics.itemExists = function(userId, barcode) {
+  return this.findOne({
+    userId,
+    'product.barcode': barcode,
+    status: { $ne: 'removed' }
+  });
+};
+
+// Static method to get items needing price updates
+wishlistItemSchema.statics.getItemsForPriceUpdate = function(options = {}) {
+  const { limit = 100, frequency = 'daily' } = options;
+  
+  const cutoffTime = new Date();
+  switch (frequency) {
+    case 'hourly':
+      cutoffTime.setHours(cutoffTime.getHours() - 1);
+      break;
+    case 'daily':
+      cutoffTime.setDate(cutoffTime.getDate() - 1);
+      break;
+    case 'weekly':
+      cutoffTime.setDate(cutoffTime.getDate() - 7);
+      break;
+  }
+
+  return this.find({
+    status: 'active',
+    'tracking.checkFrequency': frequency,
+    'tracking.lastChecked': { $lt: cutoffTime }
+  })
+  .limit(limit)
+  .sort({ 'tracking.lastChecked': 1 });
 };
 
 module.exports = mongoose.model('WishlistItem', wishlistItemSchema);

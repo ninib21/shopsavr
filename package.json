@@ -94,8 +94,11 @@
   "devDependencies": {
     "concurrently": "^8.2.2",
     "husky": "^8.0.3",
+    "jest": "^30.0.5",
     "lint-staged": "^15.2.0",
-    "standard-version": "^9.5.0"
+    "mongodb-memory-server": "^10.1.4",
+    "standard-version": "^9.5.0",
+    "supertest": "^7.1.4"
   },
   "engines": {
     "node": ">=18.0.0",

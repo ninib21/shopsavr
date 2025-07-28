@@ -1,47 +1,16 @@
 const express = require('express');
-const ProductController = require('../controllers/productController');
-const { validateProductRequest, schemas } = require('../utils/productValidation');
-const authMiddleware = require('../middleware/auth');
-const { priceTrackingLimiter } = require('../middleware/rateLimiting');
-
 const router = express.Router();
+const productController = require('../controllers/productController');
+const authMiddleware = require('../middleware/auth');
 
-// Public routes (no authentication required)
-router.post('/scan', 
-  priceTrackingLimiter,
-  validateProductRequest(schemas.barcodeScan),
-  ProductController.scanBarcode
-);
-
-router.get('/search', 
-  priceTrackingLimiter,
-  validateProductRequest(schemas.productSearch),
-  ProductController.searchProducts
-);
-
-router.get('/compare/:productId', 
-  priceTrackingLimiter,
-  validateProductRequest(schemas.productId),
-  ProductController.getPriceComparison
-);
+// Public product routes
+router.get('/search', productController.searchProducts);
+router.get('/:productId', productController.getProduct);
+router.post('/scan', productController.scanProduct);
 
 // Protected routes (require authentication)
-router.post('/track', 
-  authMiddleware,
-  priceTrackingLimiter,
-  validateProductRequest(schemas.priceTracking),
-  ProductController.trackPrice
-);
-
-// Admin/service routes
-router.get('/service/stats', 
-  authMiddleware,
-  ProductController.getServiceStats
-);
-
-router.delete('/service/cache', 
-  authMiddleware,
-  ProductController.clearCache
-);
+router.post('/track', authMiddleware, productController.trackProduct);
+router.get('/service/stats', authMiddleware, productController.getServiceStats);
+router.delete('/service/cache', authMiddleware, productController.clearCache);
 
 module.exports = router;

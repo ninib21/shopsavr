@@ -17,8 +17,10 @@ app.use(compression());
 // Session middleware
 app.use(sessionMiddleware);
 
-// Rate limiting
-app.use('/api/', generalLimiter);
+// Rate limiting (skip in test environment)
+if (process.env.NODE_ENV !== 'test') {
+  app.use('/api/', generalLimiter);
+}
 
 // CORS configuration
 app.use(cors({
@@ -30,13 +32,15 @@ app.use(cors({
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-// MongoDB connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shopsavr', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('MongoDB connected successfully'))
-.catch(err => console.error('MongoDB connection error:', err));
+// MongoDB connection (skip in test environment)
+if (process.env.NODE_ENV !== 'test') {
+  mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/shopsavr', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log('MongoDB connected successfully'))
+  .catch(err => console.error('MongoDB connection error:', err));
+}
 
 // Redis connection
 const { connectRedis, getRedisClient } = require('./config/redis');
@@ -139,8 +143,11 @@ if (process.env.NODE_ENV === 'production') {
   PriceTrackingService.start();
 }
 
-app.listen(PORT, () => {
-  console.log(`ShopSavr API server running on port ${PORT}`);
-});
+// Only start server if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`ShopSavr API server running on port ${PORT}`);
+  });
+}
 
 module.exports = app;

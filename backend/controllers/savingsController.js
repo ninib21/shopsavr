@@ -385,6 +385,16 @@ class SavingsController {
   // Get savings leaderboard (for gamification)
   static async getSavingsLeaderboard(req, res) {
     try {
+      // Check if user is authenticated and has pro features for detailed leaderboard
+      if (req.user && !req.user.hasProFeatures) {
+        return res.status(403).json({
+          error: {
+            code: 'PRO_SUBSCRIPTION_REQUIRED',
+            message: 'Pro subscription required to access leaderboard'
+          }
+        });
+      }
+
       const { period = 'all', limit = 10 } = req.query;
 
       let matchStage = { status: 'successful' };

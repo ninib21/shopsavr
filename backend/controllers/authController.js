@@ -382,6 +382,148 @@ class AuthController {
       });
     }
   }
+
+  // Update user profile
+  static async updateProfile(req, res) {
+    try {
+      const user = await User.findById(req.user.userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User not found'
+          }
+        });
+      }
+
+      const { name, avatar, settings } = req.validatedBody;
+
+      if (name) user.profile.name = name;
+      if (avatar !== undefined) user.profile.avatar = avatar;
+      if (settings) {
+        if (settings.notifications !== undefined) user.settings.notifications = settings.notifications;
+        if (settings.emailAlerts !== undefined) user.settings.emailAlerts = settings.emailAlerts;
+      }
+
+      await user.save();
+
+      Logger.info('Profile updated successfully', { userId: user._id });
+
+      res.json({
+        message: 'Profile updated successfully',
+        user: {
+          id: user._id,
+          email: user.email,
+          name: user.profile.name,
+          avatar: user.profile.avatar,
+          settings: user.settings
+        }
+      });
+    } catch (error) {
+      Logger.error('Update profile failed', { error: error.message, userId: req.user.userId });
+      res.status(500).json({
+        error: {
+          code: 'UPDATE_PROFILE_FAILED',
+          message: 'Failed to update profile'
+        }
+      });
+    }
+  }
+
+  // Delete user account
+  static async deleteAccount(req, res) {
+    try {
+      const user = await User.findById(req.user.userId);
+      
+      if (!user) {
+        return res.status(404).json({
+          error: {
+            code: 'USER_NOT_FOUND',
+            message: 'User not found'
+          }
+        });
+      }
+
+      // Soft delete - deactivate account
+      user.isActive = false;
+      await user.save();
+
+      // Remove refresh tokens
+      await AuthUtils.removeRefreshToken(user._id.toString());
+
+      Logger.info('Account deleted successfully', { userId: user._id });
+
+      res.json({
+        message: 'Account deleted successfully'
+      });
+    } catch (error) {
+      Logger.error('Delete account failed', { error: error.message, userId: req.user.userId });
+      res.status(500).json({
+        error: {
+          code: 'DELETE_ACCOUNT_FAILED',
+          message: 'Failed to delete account'
+        }
+      });
+    }
+  }
+
+  // Forgot password
+  static async forgotPassword(req, res) {
+    try {
+      const { email } = req.validatedBody;
+
+      const user = await User.findByEmail(email);
+      if (!user) {
+        // Don't reveal if email exists or not
+        return res.json({
+          message: 'If an account with that email exists, a password reset link has been sent'
+        });
+      }
+
+      // Generate password reset token
+      const resetToken = await AuthUtils.generatePasswordResetToken(user._id.toString());
+
+      // TODO: Send email with reset token
+      Logger.info('Password reset requested', { userId: user._id, email });
+
+      res.json({
+        message: 'If an account with that email exists, a password reset link has been sent'
+      });
+    } catch (error) {
+      Logger.error('Forgot password failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'FORGOT_PASSWORD_FAILED',
+          message: 'Failed to process password reset request'
+        }
+      });
+    }
+  }
+
+  // Reset password
+  static async resetPassword(req, res) {
+    try {
+      const { token, newPassword } = req.validatedBody;
+
+      // TODO: Extract user ID from token or implement token validation
+      // For now, this is a placeholder implementation
+      res.status(501).json({
+        error: {
+          code: 'NOT_IMPLEMENTED',
+          message: 'Password reset functionality not fully implemented'
+        }
+      });
+    } catch (error) {
+      Logger.error('Reset password failed', { error: error.message });
+      res.status(500).json({
+        error: {
+          code: 'RESET_PASSWORD_FAILED',
+          message: 'Failed to reset password'
+        }
+      });
+    }
+  }
 }
 
 module.exports = AuthController;

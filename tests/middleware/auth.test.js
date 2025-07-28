@@ -64,8 +64,8 @@ describe('Auth Middleware', () => {
   });
 
   test('should deny access with blacklisted token', async () => {
-    // Blacklist the token
-    await AuthUtils.blacklistToken(validToken);
+    // Mock Redis to return 'true' for blacklisted token
+    global.mockRedisClient.get.mockResolvedValueOnce('true');
 
     const response = await request(app)
       .get('/protected')
@@ -73,6 +73,9 @@ describe('Auth Middleware', () => {
       .expect(401);
 
     expect(response.body.error.code).toBe('TOKEN_BLACKLISTED');
+    
+    // Reset mock
+    global.mockRedisClient.get.mockResolvedValue(null);
   });
 
   test('should deny access with refresh token', async () => {

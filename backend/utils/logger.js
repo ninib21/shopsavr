@@ -1,49 +1,71 @@
-const fs = require('fs');
-const path = require('path');
+const winston = require('winston');
 
-// Ensure logs directory exists
-const logsDir = path.join(__dirname, '../logs');
-if (!fs.existsSync(logsDir)) {
-  fs.mkdirSync(logsDir, { recursive: true });
+// Define log levels
+const levels = {
+  error: 0,
+  warn: 1,
+  info: 2,
+  http: 3,
+  debug: 4,
+};
+
+// Define colors for each level
+const colors = {
+  error: 'red',
+  warn: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'white',
+};
+
+// Tell winston that you want to link the colors
+winston.addColors(colors);
+
+// Define which transports the logger must use
+const transports = [
+  // Console transport
+  new winston.transports.Console({
+    format: winston.format.combine(
+      winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+      winston.format.colorize({ all: true }),
+      winston.format.printf(
+        (info) => `${info.timestamp} ${info.level}: ${info.message}`
+      )
+    ),
+  }),
+];
+
+// Add file transport in production
+if (process.env.NODE_ENV === 'production') {
+  transports.push(
+    new winston.transports.File({
+      filename: 'logs/error.log',
+      level: 'error',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      ),
+    }),
+    new winston.transports.File({
+      filename: 'logs/combined.log',
+      format: winston.format.combine(
+        winston.format.timestamp(),
+        winston.format.json()
+      ),
+    })
+  );
 }
 
-class Logger {
-  static log(level, message, meta = {}) {
-    const timestamp = new Date().toISOString();
-    const logEntry = {
-      timestamp,
-      level,
-      message,
-      ...meta
-    };
-
-    // Console output
-    console.log(`[${timestamp}] ${level.toUpperCase()}: ${message}`, meta);
-
-    // File output (in production)
-    if (process.env.NODE_ENV === 'production') {
-      const logFile = path.join(logsDir, `${level}.log`);
-      fs.appendFileSync(logFile, JSON.stringify(logEntry) + '\n');
-    }
-  }
-
-  static info(message, meta = {}) {
-    this.log('info', message, meta);
-  }
-
-  static error(message, meta = {}) {
-    this.log('error', message, meta);
-  }
-
-  static warn(message, meta = {}) {
-    this.log('warn', message, meta);
-  }
-
-  static debug(message, meta = {}) {
-    if (process.env.NODE_ENV === 'development') {
-      this.log('debug', message, meta);
-    }
-  }
-}
+// Create the logger
+const Logger = winston.createLogger({
+  level: process.env.LOG_LEVEL || (process.env.NODE_ENV === 'development' ? 'debug' : 'info'),
+  levels,
+  format: winston.format.combine(
+    winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss:ms' }),
+    winston.format.errors({ stack: true }),
+    winston.format.json()
+  ),
+  transports,
+});
 
 module.exports = Logger;
