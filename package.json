@@ -1,0 +1,42 @@
+{
+  "name": "shopsavr",
+  "version": "1.0.0",
+  "description": "ShopSavr™ - Intelligent Coupon & Deal Finder App",
+  "private": true,
+  "workspaces": [
+    "backend",
+    "frontend",
+    "extension",
+    "mobile"
+  ],
+  "scripts": {
+    "dev:backend": "pnpm --filter backend dev",
+    "dev:frontend": "pnpm --filter frontend dev",
+    "build": "pnpm --filter backend build && pnpm --filter frontend build",
+    "test": "pnpm --filter backend test && pnpm --filter frontend test",
+    "lint": "eslint . --ext .ts,.tsx",
+    "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
+    "typecheck": "pnpm --filter backend typecheck && pnpm --filter frontend typecheck"
+  },
+  "keywords": [
+    "coupons",
+    "deals",
+    "shopping",
+    "savings"
+  ],
+  "author": "Joud Holdings, BidayaX, and Divitiae Good Doers Inc.",
+  "license": "UNLICENSED",
+  "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^6.21.0",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.56.0",
+    "eslint-config-prettier": "^9.1.0",
+    "prettier": "^3.2.5",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}
+

@@ -1,0 +1,113 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String?
+  authMethod    String    @default("email") // email, google, apple
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  receipts      Receipt[]
+  priceAlerts   PriceAlert[]
+  savingsRecords SavingsRecord[]
+  
+  @@map("users")
+}
+
+model Deal {
+  id            String    @id @default(cuid())
+  title         String
+  type          String    // coupon, discount, cashback
+  source        String    // rakuten, direct, affiliate
+  url           String
+  expiry        DateTime?
+  tags          String[]
+  discountAmount Float?
+  discountType  String?   // percentage, fixed
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // Relations
+  coupons       Coupon[]
+  
+  @@map("deals")
+}
+
+model Coupon {
+  id              String    @id @default(cuid())
+  code            String
+  dealId          String?
+  storeId         String
+  expiration      DateTime?
+  autoApplied     Boolean   @default(false)
+  validationStatus String?   // valid, invalid, expired
+  discountAmount  Float?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  // Relations
+  deal            Deal?     @relation(fields: [dealId], references: [id])
+  savingsRecords  SavingsRecord[]
+  
+  @@map("coupons")
+}
+
+model Receipt {
+  id            String    @id @default(cuid())
+  userId        String
+  imageUrl      String
+  extractedData Json?     // OCR extracted data
+  storeName     String?
+  totalAmount   Float?
+  scannedAt     DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  
+  @@map("receipts")
+}
+
+model PriceAlert {
+  id                String    @id @default(cuid())
+  userId            String
+  productIdentifier String    // product name, SKU, or URL
+  thresholdPrice    Float
+  currentPrice      Float?
+  triggered         Boolean   @default(false)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relations
+  user              User      @relation(fields: [userId], references: [id])
+  
+  @@map("price_alerts")
+}
+
+model SavingsRecord {
+  id            String    @id @default(cuid())
+  userId        String
+  dealId        String?
+  couponId      String?
+  amountSaved   Float
+  source        String    // coupon, price_match, alert
+  timestamp     DateTime  @default(now())
+  
+  // Relations
+  user          User      @relation(fields: [userId], references: [id])
+  coupon        Coupon?   @relation(fields: [couponId], references: [id])
+  
+  @@map("savings_records")
+}
+
