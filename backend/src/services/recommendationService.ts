@@ -68,16 +68,20 @@ export async function getPersonalizedRecommendations(
   for (const category of categories) {
     const deals = await prisma.deal.findMany({
       where: {
-        OR: [
-          { title: { contains: category, mode: 'insensitive' } },
-          { tags: { has: category } },
+        AND: [
+          {
+            OR: [
+              { title: { contains: category, mode: 'insensitive' } },
+              { tags: { has: category } },
+            ],
+          },
+          {
+            OR: [
+              { expiry: { gt: new Date() } },
+              { expiry: null },
+            ],
+          },
         ],
-        expiry: {
-          OR: [
-            { gt: new Date() },
-            { equals: null },
-          ],
-        },
       },
       include: {
         coupons: {
@@ -120,16 +124,20 @@ export async function getPersonalizedRecommendations(
   for (const alert of alerts) {
     const deals = await prisma.deal.findMany({
       where: {
-        OR: [
-          { title: { contains: alert.productIdentifier, mode: 'insensitive' } },
-          { url: { contains: alert.productIdentifier } },
+        AND: [
+          {
+            OR: [
+              { title: { contains: alert.productIdentifier, mode: 'insensitive' } },
+              { url: { contains: alert.productIdentifier } },
+            ],
+          },
+          {
+            OR: [
+              { expiry: { gt: new Date() } },
+              { expiry: null },
+            ],
+          },
         ],
-        expiry: {
-          OR: [
-            { gt: new Date() },
-            { equals: null },
-          ],
-        },
       },
       include: {
         coupons: {
@@ -193,16 +201,20 @@ export async function getDealSuggestions(
   for (const item of items) {
     const deals = await prisma.deal.findMany({
       where: {
-        OR: [
-          { title: { contains: item, mode: 'insensitive' } },
-          { tags: { has: item.toLowerCase() } },
+        AND: [
+          {
+            OR: [
+              { title: { contains: item, mode: 'insensitive' } },
+              { tags: { has: item.toLowerCase() } },
+            ],
+          },
+          {
+            OR: [
+              { expiry: { gt: new Date() } },
+              { expiry: null },
+            ],
+          },
         ],
-        expiry: {
-          OR: [
-            { gt: new Date() },
-            { equals: null },
-          ],
-        },
       },
       include: {
         coupons: {
@@ -283,14 +295,12 @@ export async function getTrendingDeals(limit: number = 10): Promise<ProductRecom
   }
 
   const deals = await prisma.deal.findMany({
-    where: {
-      expiry: {
+      where: {
         OR: [
-          { gt: new Date() },
-          { equals: null },
+          { expiry: { gt: new Date() } },
+          { expiry: null },
         ],
       },
-    },
     include: {
       coupons: {
         where: {
@@ -312,7 +322,8 @@ export async function getTrendingDeals(limit: number = 10): Promise<ProductRecom
   });
 
   const recommendations: ProductRecommendation[] = deals.map((deal) => {
-    const coupon = deal.coupons[0];
+    const dealWithCoupons = deal as typeof deal & { coupons: Array<{ discountAmount: number | null }> };
+    const coupon = dealWithCoupons.coupons?.[0];
     const discount = coupon?.discountAmount || deal.discountAmount || 0;
 
     return {
