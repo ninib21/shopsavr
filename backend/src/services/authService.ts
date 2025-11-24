@@ -47,10 +47,12 @@ export async function verifyPassword(
  * Generate JWT token
  */
 export function generateToken(userId: string, email: string): string {
-  const options: SignOptions = {
-    expiresIn: env.JWT_EXPIRES_IN || '7d',
-  };
-  return jwt.sign({ userId, email }, env.JWT_SECRET, options);
+  const expiresIn = env.JWT_EXPIRES_IN || '7d';
+  return jwt.sign(
+    { userId, email },
+    env.JWT_SECRET,
+    { expiresIn } as SignOptions
+  );
 }
 
 /**
@@ -175,4 +177,3 @@ export async function getUserByEmail(email: string) {
     },
   });
 }
-
