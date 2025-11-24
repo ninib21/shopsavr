@@ -50,7 +50,7 @@ export function generateToken(userId: string, email: string): string {
   return jwt.sign(
     { userId, email },
     env.JWT_SECRET,
-    { expiresIn: env.JWT_EXPIRES_IN }
+    { expiresIn: env.JWT_EXPIRES_IN || '7d' }
   );
 }
 
