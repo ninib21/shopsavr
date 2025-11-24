@@ -4,6 +4,7 @@ import ToastProvider from './components/ui/ToastProvider';
 import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import CouponPage from './pages/CouponPage';
+import ReceiptScanPage from './pages/ReceiptScanPage';
 
 function App() {
   return (
@@ -32,6 +33,8 @@ function App() {
           <Route path="/login" element={<LoginForm />} />
           <Route path="/signup" element={<SignupForm />} />
           <Route path="/coupons" element={<CouponPage />} />
+          <Route path="/receipts" element={<ReceiptScanPage />} />
+          <Route path="/receipts/:receiptId" element={<ReceiptScanPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
