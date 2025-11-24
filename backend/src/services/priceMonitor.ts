@@ -1,6 +1,6 @@
 import { getActivePriceAlerts, checkPriceDrop, recordPriceHistory } from './priceAlertService';
 import { PrismaClient } from '@prisma/client';
-import { sendNotification } from '../lib/firebase';
+import { sendPushNotification } from '../lib/firebase';
 
 const prisma = new PrismaClient();
 
@@ -76,7 +76,6 @@ async function notifyPriceDrop(
   alert: {
     id: string;
     productIdentifier: string;
-    productName?: string | null;
     thresholdPrice: number;
     userId: string;
     user: { email: string };
@@ -87,11 +86,11 @@ async function notifyPriceDrop(
   const savingsPercent = ((savings / alert.thresholdPrice) * 100).toFixed(1);
 
   const title = 'Price Drop Alert! 🎉';
-  const body = `${alert.productName || 'Product'} dropped to $${currentPrice.toFixed(2)}! Save $${savings.toFixed(2)} (${savingsPercent}%)`;
+  const body = `Product dropped to $${currentPrice.toFixed(2)}! Save $${savings.toFixed(2)} (${savingsPercent}%)`;
 
   try {
     // Send push notification
-    await sendNotification(alert.userId, {
+    await sendPushNotification(alert.userId, {
       title,
       body,
       data: {

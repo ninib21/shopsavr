@@ -14,9 +14,8 @@ export interface CreatePriceAlertData {
 export interface PriceAlert {
   id: string;
   productIdentifier: string;
-  productName?: string;
   thresholdPrice: number;
-  currentPrice?: number;
+  currentPrice?: number | null;
   triggered: boolean;
   createdAt: Date;
 }
@@ -41,11 +40,9 @@ export async function createPriceAlert(
     if (data.thresholdPrice < existing.thresholdPrice) {
       return prisma.priceAlert.update({
         where: { id: existing.id },
-        data: {
-          thresholdPrice: data.thresholdPrice,
-          productName: data.productName,
-          productUrl: data.productUrl,
-        },
+      data: {
+        thresholdPrice: data.thresholdPrice,
+      },
       });
     }
     return existing;
@@ -57,8 +54,6 @@ export async function createPriceAlert(
       userId: data.userId,
       productIdentifier: data.productIdentifier,
       thresholdPrice: data.thresholdPrice,
-      productName: data.productName,
-      productUrl: data.productUrl,
       triggered: false,
     },
   });
@@ -76,12 +71,10 @@ export async function getUserPriceAlerts(userId: string) {
     select: {
       id: true,
       productIdentifier: true,
-      productName: true,
       thresholdPrice: true,
       currentPrice: true,
       triggered: true,
       createdAt: true,
-      productUrl: true,
     },
   });
 }
