@@ -6,6 +6,7 @@ import SignupForm from './components/auth/SignupForm';
 import CouponPage from './pages/CouponPage';
 import ReceiptScanPage from './pages/ReceiptScanPage';
 import AlertsPage from './pages/AlertsPage';
+import DashboardPage from './pages/DashboardPage';
 
 function App() {
   return (
@@ -37,6 +38,7 @@ function App() {
           <Route path="/receipts" element={<ReceiptScanPage />} />
           <Route path="/receipts/:receiptId" element={<ReceiptScanPage />} />
           <Route path="/alerts" element={<AlertsPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
