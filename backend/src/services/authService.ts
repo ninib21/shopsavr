@@ -1,5 +1,5 @@
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import jwt, { SignOptions } from 'jsonwebtoken';
 import { PrismaClient } from '@prisma/client';
 import env from '../config/env';
 
@@ -47,12 +47,10 @@ export async function verifyPassword(
  * Generate JWT token
  */
 export function generateToken(userId: string, email: string): string {
-  const expiresIn = env.JWT_EXPIRES_IN || '7d';
-  return jwt.sign(
-    { userId, email },
-    env.JWT_SECRET,
-    { expiresIn }
-  );
+  const options: SignOptions = {
+    expiresIn: env.JWT_EXPIRES_IN || '7d',
+  };
+  return jwt.sign({ userId, email }, env.JWT_SECRET, options);
 }
 
 /**
