@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ShopSavr Coupon Widget</title>
+  <style>
+    /* Embedded styles for the coupon widget iframe */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: transparent;
+    }
+    
+    .widget-container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+      border: 1px solid #e0e0e0;
+      overflow: hidden;
+      max-width: 350px;
+    }
+    
+    .widget-header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .widget-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-weight: 600;
+      font-size: 16px;
+    }
+    
+    .widget-close {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .widget-close:hover {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    .widget-content {
+      padding: 16px;
+    }
+    
+    .widget-title {
+      margin: 0 0 12px 0;
+      font-size: 16px;
+      font-weight: 600;
+      color: #333;
+    }
+    
+    .coupon-list {
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .coupon-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      margin-bottom: 8px;
+      border: 1px solid #e9ecef;
+    }
+    
+    .coupon-info {
+      flex: 1;
+    }
+    
+    .coupon-title {
+      font-weight: 600;
+      font-size: 13px;
+      margin-bottom: 2px;
+      color: #333;
+    }
+    
+    .coupon-savings {
+      font-size: 12px;
+      color: #28a745;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+    
+    .coupon-code {
+      font-size: 11px;
+      color: #666;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      background: #e9ecef;
+      padding: 2px 6px;
+      border-radius: 3px;
+      display: inline-block;
+    }
+    
+    .apply-btn {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .apply-btn:hover {
+      background: #5a6fd8;
+    }
+    
+    .widget-footer {
+      padding: 12px 16px;
+      border-top: 1px solid #e9ecef;
+      background: #f8f9fa;
+    }
+    
+    .try-all-btn {
+      width: 100%;
+      background: #28a745;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+    
+    .try-all-btn:hover {
+      background: #218838;
+    }
+    
+    .no-coupons {
+      text-align: center;
+      padding: 20px;
+      color: #666;
+    }
+  </style>
+</head>
+<body>
+  <div class="widget-container">
+    <div class="widget-header">
+      <div class="widget-logo">
+        <span>💰</span>
+        <span>ShopSavr</span>
+      </div>
+      <button class="widget-close" onclick="closeWidget()">×</button>
+    </div>
+    
+    <div class="widget-content">
+      <h3 class="widget-title" id="widget-title">Finding coupons...</h3>
+      <div class="coupon-list" id="coupon-list">
+        <div class="no-coupons">
+          <p>Searching for the best deals...</p>
+        </div>
+      </div>
+    </div>
+    
+    <div class="widget-footer" id="widget-footer" style="display: none;">
+      <button class="try-all-btn" onclick="tryAllCoupons()">
+        🚀 Try All Coupons
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // Widget functionality
+    let coupons = [];
+    
+    function closeWidget() {
+      // Send message to parent window to close widget
+      if (window.parent) {
+        window.parent.postMessage({ action: 'closeWidget' }, '*');
+      }
+    }
+    
+    function applyCoupon(couponCode) {
+      // Send message to parent window to apply coupon
+      if (window.parent) {
+        window.parent.postMessage({ 
+          action: 'applyCoupon', 
+          couponCode: couponCode 
+        }, '*');
+      }
+    }
+    
+    function tryAllCoupons() {
+      // Send message to parent window to try all coupons
+      if (window.parent) {
+        window.parent.postMessage({ 
+          action: 'tryAllCoupons', 
+          coupons: coupons 
+        }, '*');
+      }
+    }
+    
+    function displayCoupons(couponData) {
+      coupons = couponData;
+      const couponList = document.getElementById('coupon-list');
+      const widgetTitle = document.getElementById('widget-title');
+      const widgetFooter = document.getElementById('widget-footer');
+      
+      if (coupons.length === 0) {
+        widgetTitle.textContent = 'No coupons found';
+        couponList.innerHTML = `
+          <div class="no-coupons">
+            <p>No coupons available for this site</p>
+          </div>
+        `;
+        widgetFooter.style.display = 'none';
+        return;
+      }
+      
+      widgetTitle.textContent = `Found ${coupons.length} coupon${coupons.length !== 1 ? 's' : ''}!`;
+      widgetFooter.style.display = 'block';
+      
+      couponList.innerHTML = coupons.map(coupon => `
+        <div class="coupon-item">
+          <div class="coupon-info">
+            <div class="coupon-title">${coupon.title}</div>
+            <div class="coupon-savings">
+              ${coupon.discountType === 'percentage' 
+                ? `${coupon.discountValue}% off`
+                : `$${coupon.discountValue} off`
+              }
+            </div>
+            <div class="coupon-code">Code: ${coupon.code}</div>
+          </div>
+          <button class="apply-btn" onclick="applyCoupon('${coupon.code}')">
+            Apply
+          </button>
+        </div>
+      `).join('');
+    }
+    
+    // Listen for messages from parent window
+    window.addEventListener('message', (event) => {
+      if (event.data.action === 'displayCoupons') {
+        displayCoupons(event.data.coupons);
+      }
+    });
+    
+    // Initial setup
+    document.addEventListener('DOMContentLoaded', () => {
+      // Widget is ready
+      if (window.parent) {
+        window.parent.postMessage({ action: 'widgetReady' }, '*');
+      }
+    });
+  </script>
+</body>
+</html>

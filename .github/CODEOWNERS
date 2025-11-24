@@ -1,0 +1,80 @@
+# Global owners - these users will be requested for review on all PRs
+* @shopsavr-team/core-maintainers
+
+# Backend code
+/backend/ @shopsavr-team/backend-team
+/backend/controllers/ @shopsavr-team/backend-team @shopsavr-team/api-team
+/backend/models/ @shopsavr-team/backend-team @shopsavr-team/database-team
+/backend/middleware/ @shopsavr-team/backend-team @shopsavr-team/security-team
+/backend/routes/ @shopsavr-team/backend-team @shopsavr-team/api-team
+/backend/services/ @shopsavr-team/backend-team
+/backend/utils/ @shopsavr-team/backend-team
+
+# Frontend code
+/frontend/web/ @shopsavr-team/frontend-team
+/frontend/web/src/components/ @shopsavr-team/frontend-team @shopsavr-team/ui-team
+/frontend/web/src/pages/ @shopsavr-team/frontend-team @shopsavr-team/ui-team
+/frontend/web/src/store/ @shopsavr-team/frontend-team @shopsavr-team/state-team
+/frontend/web/src/services/ @shopsavr-team/frontend-team @shopsavr-team/api-team
+
+# Browser extension
+/frontend/extension/ @shopsavr-team/extension-team
+/frontend/extension/background.js @shopsavr-team/extension-team @shopsavr-team/security-team
+/frontend/extension/content.js @shopsavr-team/extension-team
+/frontend/extension/manifest.json @shopsavr-team/extension-team @shopsavr-team/security-team
+
+# Mobile apps
+/mobile/ @shopsavr-team/mobile-team
+/mobile/ios/ @shopsavr-team/mobile-team @shopsavr-team/ios-team
+/mobile/android/ @shopsavr-team/mobile-team @shopsavr-team/android-team
+
+# Tests
+/tests/ @shopsavr-team/qa-team
+/backend/tests/ @shopsavr-team/backend-team @shopsavr-team/qa-team
+/frontend/web/src/__tests__/ @shopsavr-team/frontend-team @shopsavr-team/qa-team
+/frontend/extension/tests/ @shopsavr-team/extension-team @shopsavr-team/qa-team
+
+# Configuration files
+/.github/ @shopsavr-team/devops-team @shopsavr-team/core-maintainers
+/docker/ @shopsavr-team/devops-team
+/scripts/ @shopsavr-team/devops-team
+/.env.example @shopsavr-team/devops-team @shopsavr-team/security-team
+/docker-compose.yml @shopsavr-team/devops-team
+/Dockerfile @shopsavr-team/devops-team
+
+# Package files
+package.json @shopsavr-team/core-maintainers
+package-lock.json @shopsavr-team/core-maintainers
+/backend/package.json @shopsavr-team/backend-team @shopsavr-team/core-maintainers
+/frontend/web/package.json @shopsavr-team/frontend-team @shopsavr-team/core-maintainers
+/frontend/extension/package.json @shopsavr-team/extension-team @shopsavr-team/core-maintainers
+
+# Documentation
+/docs/ @shopsavr-team/docs-team
+README.md @shopsavr-team/docs-team @shopsavr-team/core-maintainers
+CONTRIBUTING.md @shopsavr-team/docs-team @shopsavr-team/core-maintainers
+SECURITY.md @shopsavr-team/security-team @shopsavr-team/core-maintainers
+CODE_OF_CONDUCT.md @shopsavr-team/core-maintainers
+
+# Security-sensitive files
+/backend/middleware/auth.js @shopsavr-team/security-team @shopsavr-team/core-maintainers
+/backend/utils/auth.js @shopsavr-team/security-team @shopsavr-team/core-maintainers
+/backend/controllers/authController.js @shopsavr-team/security-team @shopsavr-team/backend-team
+/backend/middleware/subscription.js @shopsavr-team/security-team @shopsavr-team/backend-team
+
+# Database migrations and schemas
+/backend/migrations/ @shopsavr-team/database-team @shopsavr-team/backend-team
+/backend/models/ @shopsavr-team/database-team @shopsavr-team/backend-team
+
+# API documentation
+/docs/api/ @shopsavr-team/api-team @shopsavr-team/docs-team
+/backend/routes/ @shopsavr-team/api-team @shopsavr-team/backend-team
+
+# Build and deployment
+/.github/workflows/ @shopsavr-team/devops-team @shopsavr-team/core-maintainers
+/scripts/deploy/ @shopsavr-team/devops-team @shopsavr-team/core-maintainers
+/scripts/build/ @shopsavr-team/devops-team
+
+# Monitoring and logging
+/backend/utils/logger.js @shopsavr-team/devops-team @shopsavr-team/backend-team
+/backend/middleware/rateLimiting.js @shopsavr-team/security-team @shopsavr-team/backend-team
