@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { signup, login, getUserById } from '../../services/authService';
 import { authenticateToken } from '../middleware/auth';
 
-const router = Router();
+const router: Router = Router();
 
 // Validation schemas
 const signupSchema = z.object({
