@@ -25,8 +25,9 @@ app.get('/health', (_req, res) => {
 
 // API routes
 import authRoutes from './api/routes/auth';
+import couponRoutes from './api/routes/coupons';
 app.use('/api/auth', authRoutes);
-// app.use('/api/coupons', couponRoutes);
+app.use('/api/coupons', couponRoutes);
 // app.use('/api/receipts', receiptRoutes);
 // app.use('/api/alerts', alertRoutes);
 // app.use('/api/search', searchRoutes);
