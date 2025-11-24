@@ -85,12 +85,10 @@ async function findBetterPriceForItem(
           mode: 'insensitive',
         },
       })),
-      expiry: {
-        OR: [
-          { gt: new Date() },
-          { equals: null },
-        ],
-      },
+      OR: [
+        { expiry: { gt: new Date() } },
+        { expiry: null },
+      ],
     },
     // Note: Deal-Coupon relation exists in schema
     // For now, we'll search coupons separately
