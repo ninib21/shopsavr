@@ -27,9 +27,11 @@ app.get('/health', (_req, res) => {
 import authRoutes from './api/routes/auth';
 import couponRoutes from './api/routes/coupons';
 import receiptRoutes from './api/routes/receipts';
+import alertRoutes from './api/routes/alerts';
 app.use('/api/auth', authRoutes);
 app.use('/api/coupons', couponRoutes);
 app.use('/api/receipts', receiptRoutes);
+app.use('/api/alerts', alertRoutes);
 // app.use('/api/receipts', receiptRoutes);
 // app.use('/api/alerts', alertRoutes);
 // app.use('/api/search', searchRoutes);

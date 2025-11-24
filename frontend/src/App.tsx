@@ -5,6 +5,7 @@ import LoginForm from './components/auth/LoginForm';
 import SignupForm from './components/auth/SignupForm';
 import CouponPage from './pages/CouponPage';
 import ReceiptScanPage from './pages/ReceiptScanPage';
+import AlertsPage from './pages/AlertsPage';
 
 function App() {
   return (
@@ -35,6 +36,7 @@ function App() {
           <Route path="/coupons" element={<CouponPage />} />
           <Route path="/receipts" element={<ReceiptScanPage />} />
           <Route path="/receipts/:receiptId" element={<ReceiptScanPage />} />
+          <Route path="/alerts" element={<AlertsPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
