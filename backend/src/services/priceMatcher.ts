@@ -79,15 +79,21 @@ async function findBetterPriceForItem(
   // Search deals for matching products
   const deals = await prisma.deal.findMany({
     where: {
-      OR: searchTerms.map((term) => ({
-        title: {
-          contains: term,
-          mode: 'insensitive',
+      AND: [
+        {
+          OR: searchTerms.map((term) => ({
+            title: {
+              contains: term,
+              mode: 'insensitive',
+            },
+          })),
         },
-      })),
-      OR: [
-        { expiry: { gt: new Date() } },
-        { expiry: null },
+        {
+          OR: [
+            { expiry: { gt: new Date() } },
+            { expiry: null },
+          ],
+        },
       ],
     },
     // Note: Deal-Coupon relation exists in schema
