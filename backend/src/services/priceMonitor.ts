@@ -1,6 +1,5 @@
 import { getActivePriceAlerts, checkPriceDrop, recordPriceHistory } from './priceAlertService';
 import { PrismaClient } from '@prisma/client';
-import { sendPushNotification } from '../lib/firebase';
 
 const prisma = new PrismaClient();
 
